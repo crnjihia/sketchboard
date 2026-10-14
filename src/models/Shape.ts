@@ -1,5 +1,5 @@
 // Shape model and utilities
-export type ShapeType = 'rectangle' | 'ellipse' | 'line' | 'freehand';
+export type ShapeType = 'rectangle' | 'ellipse' | 'line' | 'freehand' | 'text';
 
 export interface BaseShape {
   id: string;
@@ -17,7 +17,19 @@ export interface RectangleShape extends BaseShape {
   height: number;
 }
 
-export type Shape = RectangleShape; // Extend with other shapes later
+// Freehand shape – a series of points for a continuous stroke
+export interface FreehandShape extends BaseShape {
+  type: 'freehand';
+  points: { x: number; y: number }[];
+}
+
+// Text shape – a single line of text placed at a coordinate
+export interface TextShape extends BaseShape {
+  type: 'text';
+  content: string;
+}
+
+export type Shape = RectangleShape | FreehandShape | TextShape; // Includes new shape types
 
 /** Simple hit‑test for a rectangle shape */
 export function hitTestRect(shape: RectangleShape, px: number, py: number): boolean {

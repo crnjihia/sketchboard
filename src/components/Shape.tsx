@@ -1,5 +1,7 @@
 import React from 'react';
-import { Shape } from '../models/Shape';
+import { Shape, FreehandShape, TextShape } from '../models/Shape';
+import FreehandShapeComponent from './FreehandShape';
+import TextShapeComponent from './TextShape';
 
 interface ShapeProps {
   shape: Shape;
@@ -27,6 +29,16 @@ const ShapeComponent: React.FC<ShapeProps> = ({ shape, onSelect }) => {
         onClick={handleClick}
       />
     );
+  }
+
+  if (shape.type === 'freehand') {
+    const freehand = shape as FreehandShape;
+    return <FreehandShapeComponent shape={freehand} onSelect={onSelect} />;
+  }
+
+  if (shape.type === 'text') {
+    const text = shape as TextShape;
+    return <TextShapeComponent shape={text} onSelect={onSelect} />;
   }
 
   // Future shapes go here
