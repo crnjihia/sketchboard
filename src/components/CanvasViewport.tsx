@@ -1,14 +1,26 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './CanvasViewport.css';
-import { Shape, RectangleShape, FreehandShape, TextShape } from '../models/Shape';
+import { Shape, RectangleShape, FreehandShape, TextShape, StickyNoteShape } from '../models/Shape';
 import ShapeComponent from './Shape';
+import { useYjs } from '../context/YjsContext';
 
 const CanvasViewport: React.FC = () => {
   const elRef = useRef<HTMLDivElement>(null);
+  const { shapesArray, addShape, updateShape } = useYjs();
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [drawingMode, setDrawingMode] = useState<'rectangle' | 'freehand'>('rectangle');
+
+  // Sync local shapes with Yjs array
+  useEffect(() => {
+    const sync = () => {
+      setShapes(shapesArray.toArray());
+    };
+    shapesArray.observe(sync);
+    sync();
+    return () => shapesArray.unobserve(sync);
+  }, [shapesArray]);
 
   // Simple pan/zoom placeholder (unchanged) – we keep it for later.
   useEffect(() => {
@@ -20,7 +32,6 @@ const CanvasViewport: React.FC = () => {
     let offsetX = 0;
     let offsetY = 0;
     const onMouseDown = (e: MouseEvent) => {
-      // If clicking on a shape, skip panning (selection handled elsewhere).
       if ((e.target as HTMLElement).closest('svg')?.contains(e.target as Node)) return;
       isPanning = true;
       panStartX = e.clientX;
@@ -53,11 +64,9 @@ const CanvasViewport: React.FC = () => {
     const bounds = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX - bounds.left;
     const y = e.clientY - bounds.top;
-
     if (drawingMode === 'rectangle') {
-      // Start drawing a rectangle
       const rect = (e.target as HTMLElement).closest('svg');
-      if (rect) return; // ignore if clicked on existing shape
+      if (rect) return;
       setStartPos({ x, y });
       const newRect: RectangleShape = {
         id: `${Date.now()}-${Math.random()}`,
@@ -68,10 +77,9 @@ const CanvasViewport: React.FC = () => {
         height: 0,
         selected: false,
       };
-      setShapes(prev => [...prev, newRect]);
+      addShape(newRect);
       setIsDrawing(true);
     } else if (drawingMode === 'freehand') {
-      // Start freehand stroke
       const newFree: FreehandShape = {
         id: `${Date.now()}-${Math.random()}`,
         type: 'freehand',
@@ -82,7 +90,7 @@ const CanvasViewport: React.FC = () => {
         color: '#ff5722',
         strokeWidth: 2,
       };
-      setShapes(prev => [...prev, newFree]);
+      addShape(newFree);
       setIsDrawing(true);
     }
   };
@@ -92,29 +100,24 @@ const CanvasViewport: React.FC = () => {
     const bounds = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX - bounds.left;
     const y = e.clientY - bounds.top;
-
     if (drawingMode === 'rectangle') {
       if (!startPos) return;
-      setShapes(prev => {
-        const last = prev[prev.length - 1];
-        if (!last || last.type !== 'rectangle') return prev;
-        const updated: RectangleShape = {
-          ...last,
-          width: x - startPos.x,
-          height: y - startPos.y,
-        };
-        return [...prev.slice(0, -1), updated];
-      });
+      const latest = shapesArray.toArray().slice(-1)[0];
+      if (!latest || latest.type !== 'rectangle') return;
+      const updated: RectangleShape = {
+        ...latest,
+        width: x - startPos.x,
+        height: y - startPos.y,
+      };
+      updateShape(updated);
     } else if (drawingMode === 'freehand') {
-      setShapes(prev => {
-        const last = prev[prev.length - 1];
-        if (!last || last.type !== 'freehand') return prev;
-        const updated: FreehandShape = {
-          ...last,
-          points: [...last.points, { x, y }],
-        };
-        return [...prev.slice(0, -1), updated];
-      });
+      const latest = shapesArray.toArray().slice(-1)[0];
+      if (!latest || latest.type !== 'freehand') return;
+      const updated: FreehandShape = {
+        ...latest,
+        points: [...(latest.points ?? []), { x, y }],
+      };
+      updateShape(updated);
     }
   };
 
@@ -124,7 +127,6 @@ const CanvasViewport: React.FC = () => {
   };
 
   const canvasDoubleClick = (e: React.MouseEvent) => {
-    // Create a text annotation at double‑click location
     const bounds = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX - bounds.left;
     const y = e.clientY - bounds.top;
@@ -138,13 +140,20 @@ const CanvasViewport: React.FC = () => {
       color: '#000',
       strokeWidth: 1,
     };
-    setShapes(prev => [...prev, newText]);
+    addShape(newText);
   };
 
   const toggleSelect = (id: string) => {
-    setShapes(prev =>
-      prev.map(s => (s.id === id ? { ...s, selected: !s.selected } : { ...s, selected: false }))
-    );
+    // Ensure exclusive selection: only one shape selected at a time
+    const current = shapesArray.toArray();
+    current.forEach(s => {
+      const updated = { ...s, selected: s.id === id ? !s.selected : false };
+      updateShape(updated as Shape);
+    });
+  };
+
+  const handleShapeUpdate = (updated: Shape) => {
+    updateShape(updated);
   };
 
   return (
@@ -152,6 +161,27 @@ const CanvasViewport: React.FC = () => {
       <div className="canvas-controls" style={{ marginBottom: '0.5rem' }}>
         <button onClick={() => setDrawingMode(prev => (prev === 'rectangle' ? 'freehand' : 'rectangle'))}>
           Mode: {drawingMode}
+        </button>
+        <button
+          onClick={() => {
+            const defaultX = 100;
+            const defaultY = 100;
+            const newSticky: StickyNoteShape = {
+              id: `${Date.now()}-${Math.random()}`,
+              type: 'sticky',
+              x: defaultX,
+              y: defaultY,
+              width: 200,
+              height: 150,
+              content: 'Edit me',
+              selected: false,
+              color: '#ffeb3b',
+              strokeWidth: 1,
+            };
+            addShape(newSticky);
+          }}
+        >
+          Add Sticky Note
         </button>
       </div>
       <svg
@@ -164,7 +194,7 @@ const CanvasViewport: React.FC = () => {
         onDoubleClick={canvasDoubleClick}
       >
         {shapes.map(shape => (
-          <ShapeComponent key={shape.id} shape={shape} onSelect={toggleSelect} />
+          <ShapeComponent key={shape.id} shape={shape} onSelect={toggleSelect} onUpdate={handleShapeUpdate} />
         ))}
       </svg>
     </div>
