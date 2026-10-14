@@ -1,5 +1,5 @@
 // Shape model and utilities
-export type ShapeType = 'rectangle' | 'ellipse' | 'line' | 'freehand' | 'text';
+export type ShapeType = 'rectangle' | 'ellipse' | 'line' | 'freehand' | 'text' | 'sticky';
 
 export interface BaseShape {
   id: string;
@@ -29,7 +29,14 @@ export interface TextShape extends BaseShape {
   content: string;
 }
 
-export type Shape = RectangleShape | FreehandShape | TextShape; // Includes new shape types
+export interface StickyNoteShape extends BaseShape {
+  type: 'sticky';
+  width: number;
+  height: number;
+  content: string;
+}
+
+export type Shape = RectangleShape | FreehandShape | TextShape | StickyNoteShape; // Includes new shape types
 
 /** Simple hit‑test for a rectangle shape */
 export function hitTestRect(shape: RectangleShape, px: number, py: number): boolean {

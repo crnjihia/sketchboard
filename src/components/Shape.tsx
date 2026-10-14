@@ -1,14 +1,16 @@
 import React from 'react';
-import { Shape, FreehandShape, TextShape } from '../models/Shape';
+import { Shape, FreehandShape, TextShape, StickyNoteShape } from '../models/Shape';
 import FreehandShapeComponent from './FreehandShape';
 import TextShapeComponent from './TextShape';
+import StickyNoteComponent from './StickyNote';
 
 interface ShapeProps {
   shape: Shape;
   onSelect: (id: string) => void;
+  onUpdate?: (updated: Shape) => void;
 }
 
-const ShapeComponent: React.FC<ShapeProps> = ({ shape, onSelect }) => {
+const ShapeComponent: React.FC<ShapeProps> = ({ shape, onSelect, onUpdate }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // prevent canvas click
     onSelect(shape.id);
@@ -39,6 +41,11 @@ const ShapeComponent: React.FC<ShapeProps> = ({ shape, onSelect }) => {
   if (shape.type === 'text') {
     const text = shape as TextShape;
     return <TextShapeComponent shape={text} onSelect={onSelect} />;
+  }
+
+  if (shape.type === 'sticky') {
+    const sticky = shape as StickyNoteShape;
+    return <StickyNoteComponent shape={sticky} onSelect={onSelect} onUpdate={onUpdate as any} />;
   }
 
   // Future shapes go here
