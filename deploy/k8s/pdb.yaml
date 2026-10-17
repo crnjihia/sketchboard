@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sketchboard-server-pdb
+  namespace: sketchboard
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: sketchboard-server

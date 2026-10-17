@@ -13,6 +13,10 @@
     "sourceMap": true,
     "composite": false,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sketchboard/shared": ["packages/shared/src/index.ts"]
+    }
   }
 }

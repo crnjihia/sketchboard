@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sketchboard-config
+  namespace: sketchboard
+data:
+  PORT: "4000"
+  HOST: "0.0.0.0"
+  ENABLE_REDIS: "true"
+  REDIS_URL: "redis://redis-service.sketchboard.svc.cluster.local:6379"
+  ENABLE_POSTGRES: "true"
+  DATABASE_URL: "postgres://postgres:sketchboard_secret@postgres-service.sketchboard.svc.cluster.local:5432/sketchboard"
+  COMPACTION_THRESHOLD: "50"
+  COMPACTION_MAX_BYTES: "524288"

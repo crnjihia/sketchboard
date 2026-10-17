@@ -1,0 +1,65 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sketchboard-ingress
+  namespace: sketchboard
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+
+    # Sticky Session Annotations for Socket.io HTTP long-polling fallback
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "SKETCHBOARD_AFFINITY"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "86400"
+    nginx.ingress.kubernetes.io/session-cookie-samesite: "Lax"
+
+    # WebSocket Proxy Timeouts (prevent premature disconnects on idle design canvases)
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+
+    # Buffering disabled for real-time streaming
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+spec:
+  rules:
+    - http:
+        paths:
+          # Real-time WebSocket and Socket.io Transport
+          - path: /socket.io
+            pathType: Prefix
+            backend:
+              service:
+                name: sketchboard-server-service
+                port:
+                  number: 4000
+
+          # Health & Metrics Monitoring Endpoints
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service:
+                name: sketchboard-server-service
+                port:
+                  number: 4000
+          - path: /readyz
+            pathType: Exact
+            backend:
+              service:
+                name: sketchboard-server-service
+                port:
+                  number: 4000
+          - path: /metrics
+            pathType: Exact
+            backend:
+              service:
+                name: sketchboard-server-service
+                port:
+                  number: 4000
+
+          # Static Web Frontend Application
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sketchboard-web-service
+                port:
+                  number: 80

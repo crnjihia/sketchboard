@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sketchboard
+  labels:
+    app.kubernetes.io/name: sketchboard
+    app.kubernetes.io/part-of: sketchboard-system

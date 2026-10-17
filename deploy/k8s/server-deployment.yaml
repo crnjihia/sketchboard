@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sketchboard-server
+  namespace: sketchboard
+  labels:
+    app: sketchboard-server
+    tier: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sketchboard-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: sketchboard-server
+        tier: api
+    spec:
+      terminationGracePeriodSeconds: 30
+      affinity:
+        # Anti-affinity spread across Kubernetes worker nodes
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - sketchboard-server
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: server
+          image: ghcr.io/crnjihia/sketchboard-server:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: sketchboard-config
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 4000
+              name: http
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          lifecycle:
+            preStop:
+              exec:
+                # PreStop hook gives existing WebSocket rooms time to drain before SIGTERM
+                command: ["/bin/sh", "-c", "sleep 5"]

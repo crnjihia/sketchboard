@@ -1,0 +1,117 @@
+services:
+  # PostgreSQL 16 (Snapshot Persistence)
+  postgres:
+    image: postgres:16-alpine
+    container_name: sketchboard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: sketchboard_secret
+      POSTGRES_DB: sketchboard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sketchboard-net
+
+  # Redis 7 (Hot Update Log & Cluster Pub/Sub)
+  redis:
+    image: redis:7-alpine
+    container_name: sketchboard-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - sketchboard-net
+
+  # Server Replica 1
+  server-1:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.server
+    container_name: sketchboard-server-1
+    restart: unless-stopped
+    environment:
+      PORT: "4000"
+      HOST: "0.0.0.0"
+      NODE_ID: "server-1"
+      REDIS_URL: "redis://redis:6379"
+      ENABLE_REDIS: "true"
+      DATABASE_URL: "postgres://postgres:sketchboard_secret@postgres:5432/sketchboard"
+      ENABLE_POSTGRES: "true"
+      COMPACTION_THRESHOLD: "50"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sketchboard-net
+
+  # Server Replica 2
+  server-2:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.server
+    container_name: sketchboard-server-2
+    restart: unless-stopped
+    environment:
+      PORT: "4000"
+      HOST: "0.0.0.0"
+      NODE_ID: "server-2"
+      REDIS_URL: "redis://redis:6379"
+      ENABLE_REDIS: "true"
+      DATABASE_URL: "postgres://postgres:sketchboard_secret@postgres:5432/sketchboard"
+      ENABLE_POSTGRES: "true"
+      COMPACTION_THRESHOLD: "50"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sketchboard-net
+
+  # Frontend Web Container
+  web:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.web
+    container_name: sketchboard-web
+    restart: unless-stopped
+    networks:
+      - sketchboard-net
+
+  # NGINX Load Balancer with WebSocket Upgrade & IP Hash Stickiness
+  loadbalancer:
+    image: nginx:alpine
+    container_name: sketchboard-lb
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx-lb.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - server-1
+      - server-2
+      - web
+    networks:
+      - sketchboard-net
+
+networks:
+  sketchboard-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

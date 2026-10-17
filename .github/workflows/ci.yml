@@ -7,19 +7,75 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  test-and-build:
     runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: sketchboard_secret
+          POSTGRES_DB: sketchboard
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node.js
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 12.9.1
+
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'pnpm'
+
       - name: Install dependencies
-        run: npm ci
-      - name: Run lint
-        run: npm run lint
-      - name: Run tests
-        run: npm test
-      - name: Build
-        run: npm run build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm approve-builds --all
+
+      - name: Lint and Typecheck
+        run: pnpm run build
+
+      - name: Run Test Suites
+        env:
+          REDIS_URL: redis://localhost:6379
+          DATABASE_URL: postgres://postgres:sketchboard_secret@localhost:5432/sketchboard
+          ENABLE_REDIS: "true"
+          ENABLE_POSTGRES: "true"
+        run: pnpm test
+
+      - name: Run Chaos Test (Server Failover & 0 Edit Loss)
+        env:
+          REDIS_URL: redis://localhost:6379
+        run: pnpm test:chaos
+
+      - name: Run Cluster Load Test
+        run: pnpm test:load
+
+      - name: Build Docker Server Image (Smoke Test)
+        run: docker build -f Dockerfile.server -t sketchboard-server:test .
+
+      - name: Build Docker Web Image (Smoke Test)
+        run: docker build -f Dockerfile.web -t sketchboard-web:test .
