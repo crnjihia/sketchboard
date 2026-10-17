@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:chaos": "tsx scripts/chaos-test.ts",
     "test:load": "tsx scripts/load-test.ts",
+    "seed": "tsx scripts/seed-demo.ts",
     "lint": "echo \"Linting workspace...\"",
     "clean": "node -e \"console.log('cleaning...')\""
   },

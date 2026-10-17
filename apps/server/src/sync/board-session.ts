@@ -46,6 +46,12 @@ export class BoardSessionManager {
         session.applyUpdate(update, 'init:hot-update');
       }
 
+      // 3. Auto-seed default Kenyan fintech demo board if empty
+      if (session.getObjectsMap().size === 0 && boardId === 'nairobi-hq') {
+        const { seedNairobiHQ } = await import('./seed-data');
+        seedNairobiHQ(session);
+      }
+
       this.sessions.set(boardId, session);
       this.boardStats.set(boardId, {
         uncompactedUpdates: hotUpdates.length,
@@ -57,6 +63,7 @@ export class BoardSessionManager {
     }
     return session;
   }
+
 
   public getExistingSession(boardId: string): BoardDocManager | undefined {
     return this.sessions.get(boardId);

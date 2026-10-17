@@ -18,8 +18,11 @@ interface OutboxItem {
 }
 
 export const App: React.FC = () => {
-  // Parse boardId from URL path /b/:boardId or default to 'nairobi-hq'
+  // Parse boardId from query param ?board= or URL path /b/:boardId, defaulting to 'nairobi-hq'
   const boardId = useMemo(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const queryBoard = searchParams.get('board');
+    if (queryBoard) return queryBoard;
     const match = window.location.pathname.match(/\/b\/([^/]+)/);
     return match ? match[1] : 'nairobi-hq';
   }, []);
