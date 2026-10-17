@@ -1,9 +1,12 @@
 # Node and Vite project scaffold
 node_modules/
-/dist/
-/.vite/
-/.pnp*
+dist/
+.vite/
+.pnp*
 .pnp.js
 .vscode/
 .DS_Store
 *.log
+.env
+.env.local
+

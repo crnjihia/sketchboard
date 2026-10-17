@@ -10,11 +10,16 @@
     "build": "pnpm --filter \"@sketchboard/*\" build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:chaos": "tsx scripts/chaos-test.ts",
+    "test:load": "tsx scripts/load-test.ts",
     "lint": "echo \"Linting workspace...\"",
     "clean": "node -e \"console.log('cleaning...')\""
   },
   "devDependencies": {
+    "@sketchboard/shared": "workspace:*",
     "@types/node": "^22.10.1",
+    "socket.io-client": "^4.8.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   }
