@@ -162,7 +162,7 @@ describe('Socket.io Single-Node Real-Time Sync Loop', () => {
     // Verify both clients and the server have converged
     const obj1After = doc1.getObject('sticky-nairobi-1');
     const obj2After = doc2.getObject('sticky-nairobi-1');
-    const serverSession = serverInstance.sessionManager.getOrCreateSession(boardId);
+    const serverSession = await serverInstance.sessionManager.getOrCreateSession(boardId);
     const serverObj = serverSession.getObject('sticky-nairobi-1');
 
     expect(obj1After?.x).toBe(450);
