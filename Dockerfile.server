@@ -1,0 +1,8 @@
+# Server Dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --production
+COPY server ./server
+EXPOSE 1234 4000
+CMD ["node", "server/server.js"]
