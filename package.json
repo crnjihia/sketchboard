@@ -12,11 +12,13 @@
     "test:watch": "vitest",
     "test:chaos": "tsx scripts/chaos-test.ts",
     "test:load": "tsx scripts/load-test.ts",
+    "test:e2e": "playwright test",
     "seed": "tsx scripts/seed-demo.ts",
     "lint": "echo \"Linting workspace...\"",
     "clean": "node -e \"console.log('cleaning...')\""
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@sketchboard/shared": "workspace:*",
     "@types/node": "^22.10.1",
     "socket.io-client": "^4.8.1",

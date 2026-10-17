@@ -1,5 +1,5 @@
 # Makefile for Sketchboard
-.PHONY: setup dev dev-web dev-server test test-chaos test-load seed lint build compose-up compose-down k8s-up k8s-down clean
+.PHONY: setup dev dev-web dev-server test test-chaos test-load test-e2e seed lint build compose-up compose-down k8s-up k8s-down clean
 
 setup:
 	pnpm install
@@ -22,6 +22,9 @@ test-chaos:
 
 test-load:
 	pnpm test:load
+
+test-e2e:
+	pnpm test:e2e
 
 seed:
 	pnpm seed

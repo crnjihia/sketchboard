@@ -242,6 +242,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   return (
     <div
       ref={containerRef}
+      data-testid="canvas-container"
       style={{
         position: 'relative',
         width: '100%',
@@ -254,6 +255,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
       {/* Layer 1: Static Scene Canvas */}
       <canvas
         ref={sceneCanvasRef}
+        data-testid="scene-canvas"
         style={{
           position: 'absolute',
           top: 0,
@@ -267,6 +269,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
       {/* Layer 2: Interaction & Overlay Canvas */}
       <canvas
         ref={overlayCanvasRef}
+        data-testid="overlay-canvas"
         style={{
           position: 'absolute',
           top: 0,
