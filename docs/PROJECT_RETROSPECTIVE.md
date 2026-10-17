@@ -46,8 +46,8 @@ Sketchboard was built from `git init` to a complete, production-grade distribute
 
 - [ ] **Multi-User Viewport Following**: Clicking an avatar in the squad header smoothly animates your canvas viewport to follow their pan and zoom in real time.
 - [ ] **Vector Pen Curvature Editing**: Enhance the freehand pen with cubic Bezier control point manipulation.
-- [ ] **Component Library & Asset Library**: Pre-built wireframe components for Kenyan mobile money patterns (M-PESA checkout flows, KRA eTIMS invoice cards).
-- [ ] **E2E Browser Matrix**: Playwright browser test runner validating concurrent drag across Chrome, Safari, and Firefox.
+- [x] **E2E Multi-Browser Verification**: Automated Playwright test suite validating real-time replication, concurrent drag convergence, live cursors, and state restore across isolated browser contexts.
+- [ ] **Cross-Browser Mobile Emulation Matrix**: Expand Playwright matrix to mobile Safari and Android WebKit touch gestures.
 
 ---
 

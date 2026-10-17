@@ -40,6 +40,8 @@ Access the application at [http://localhost:8080](http://localhost:8080) (`?debu
 ---
 
 ## Test Verification Summary
-- **Unit & Integration Tests**: 27/27 Passed
-- **Crash Failover Chaos Test**: Passed with 0 lost edits
-- **Cluster Load Benchmark**: 5,350 cursors, 200 edits, 100% ACK rate
+- **Unit, Integration & CRDT Fuzzing Tests**: 27/27 Passed (`make test`)
+- **Multi-Browser Playwright Collaboration Test**: 100% Passed (`make test-e2e`)
+- **Crash Failover Chaos Test**: Passed with 0 lost edits (`make test-chaos`)
+- **Cluster Load Benchmark**: 5,350 cursors, 200 edits, 100% ACK rate (`make test-load`)
+- **Kubernetes 2-Node Kind Smoke Test**: Rollout verified on 2 worker nodes (`make k8s-smoke`)
