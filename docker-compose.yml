@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - yjs
+    environment:
+      - YJS_ENDPOINT=ws://yjs:1234
+  yjs:
+    image: yjs/y-websocket
+    ports:
+      - "1234:1234"
+  socket:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "4000:4000"
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

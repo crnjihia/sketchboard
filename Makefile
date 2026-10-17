@@ -1,18 +1,27 @@
 # Makefile for Sketchboard
-
-.PHONY: setup dev test lint build
+.PHONY: setup dev dev-web dev-server test lint build clean
 
 setup:
-	npm install
+	pnpm install
+	pnpm approve-builds --all
 
 dev:
-	npm run dev
+	pnpm dev
+
+dev-web:
+	pnpm dev:web
+
+dev-server:
+	pnpm dev:server
 
 test:
-	npm run test
+	pnpm test
 
 lint:
-	npm run lint
+	pnpm lint
 
 build:
-	npm run build
+	pnpm build
+
+clean:
+	pnpm clean
