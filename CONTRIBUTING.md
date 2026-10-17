@@ -1,16 +1,10 @@
 # Contributing to Sketchboard
 
-Thank you for your interest in contributing to Sketchboard! We welcome contributions from design technologists, frontend engineers, distributed systems builders, and open-source enthusiasts.
+Thank you for your interest in contributing to Sketchboard! I welcome contributions from design technologists, frontend engineers, distributed systems builders, and open-source enthusiasts.
 
 ---
 
-## 1. Code of Conduct
-
-All contributors are expected to uphold our [Code of Conduct](CODE_OF_CONDUCT.md). Please treat all members of the community with empathy, respect, and professionalism.
-
----
-
-## 2. Development Setup
+## 1. Development Setup
 
 Sketchboard is structured as a `pnpm` monorepo using TypeScript strict mode throughout.
 
@@ -34,7 +28,7 @@ make dev
 
 ---
 
-## 3. Branching & Commit Conventions
+## 2. Branching & Commit Conventions
 
 ### Branch Naming
 Work on short-lived feature branches cut from `main`:
@@ -62,7 +56,7 @@ All commits must follow the [Conventional Commits](https://www.conventionalcommi
 
 ---
 
-## 4. Testing & Quality Standards
+## 3. Testing & Quality Standards
 
 Before submitting a Pull Request, ensure all quality gates pass:
 
@@ -88,7 +82,7 @@ make build
 
 ---
 
-## 5. Pull Request Checklist
+## 4. Pull Request Checklist
 
 When opening a Pull Request:
 - [ ] Code compiles cleanly with `pnpm build` across all packages.
@@ -99,7 +93,7 @@ When opening a Pull Request:
 
 ---
 
-## 6. Good First Issues
+## 5. Good First Issues
 
 If you are new to the repository, look for issues tagged `good first issue` or explore:
 - Adding touch gesture support for mobile tablets

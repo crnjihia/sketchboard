@@ -1,6 +1,6 @@
 # Security Policy
 
-The Sketchboard team takes the security of our real-time collaboration engine and user data seriously. We appreciate the responsible disclosure of any vulnerabilities.
+I take the security of my real-time collaboration engine and user data seriously. I appreciate the responsible disclosure of any vulnerabilities.
 
 ---
 
@@ -21,7 +21,7 @@ Only the latest release version on the `main` branch receives security updates.
 
 If you discover a potential vulnerability in Sketchboard:
 
-1. Send an email to **[security@sketchboard.dev]** (or contact the maintainers directly via repository security advisories).
+1. Send an email to **[crnjihia@gmail.com]** (or contact the maintainers directly via repository security advisories).
 2. Include the following details:
    - Type of vulnerability (e.g. CRDT payload injection, unauthorized Socket.io room join, memory exhaustion via unbounded binary updates).
    - Step-by-step reproduction instructions or a minimal proof-of-concept.
@@ -32,9 +32,9 @@ If you discover a potential vulnerability in Sketchboard:
 
 ## Response Process & SLA
 
-- **Acknowledgment**: We will acknowledge receipt of your report within **48 hours**.
-- **Assessment**: Our engineering team will assess and validate the vulnerability within **5 business days**.
-- **Fix & Disclosure**: If validated, we will develop a patch, deploy it to supported branches, and coordinate a mutual disclosure date with credit given to the reporter.
+- **Acknowledgment**: I will acknowledge receipt of your report within **48 hours**.
+- **Assessment**: I will assess and validate the vulnerability within **5 business days**.
+- **Fix & Disclosure**: If validated, I will develop a patch, deploy it to supported branches, and coordinate a mutual disclosure date with credit given to the reporter.
 
 ---
 

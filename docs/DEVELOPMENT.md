@@ -105,3 +105,7 @@ make test-chaos
 # Run 50-socket cluster load benchmark
 make test-load
 ```
+
+---
+
+For branch naming conventions, commit guidelines, and PR checklists, please see [CONTRIBUTING.md](../CONTRIBUTING.md).

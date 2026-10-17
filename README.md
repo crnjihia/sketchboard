@@ -433,6 +433,14 @@ Detailed rationale behind every engineering decision is documented in `docs/adr/
 
 ---
 
+## Contributing & Security
+
+- **Contributing**: Contributions, bug fixes, and feature proposals are warmly welcomed! Please read the [Contributing Guide](CONTRIBUTING.md) for branch naming conventions, Conventional Commits guidelines, and testing procedures.
+- **Security**: To report potential vulnerabilities responsibly, please review the [Security Policy](SECURITY.md).
+- **License**: MIT License &bull; Free and open source for engineers and creators worldwide.
+
+---
+
 <p align="center">
   Crafted with care for Kenyan design squads &bull; Harambee!
 </p>
