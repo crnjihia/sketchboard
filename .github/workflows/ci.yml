@@ -6,8 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  test-and-build:
+  test-and-verify:
     runs-on: ubuntu-latest
 
     services:
@@ -58,13 +62,27 @@ jobs:
       - name: Lint and Typecheck
         run: pnpm run build
 
-      - name: Run Test Suites
+      - name: Run Test Suites (Vitest)
         env:
           REDIS_URL: redis://localhost:6379
           DATABASE_URL: postgres://postgres:sketchboard_secret@localhost:5432/sketchboard
           ENABLE_REDIS: "true"
           ENABLE_POSTGRES: "true"
         run: pnpm test
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright Multi-Browser Collaboration E2E
+        run: pnpm test:e2e
+
+      - name: Upload Hero Screenshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hero-screenshot
+          path: docs/assets/hero-screenshot.png
+          if-no-files-found: ignore
 
       - name: Run Chaos Test (Server Failover & 0 Edit Loss)
         env:
@@ -74,8 +92,59 @@ jobs:
       - name: Run Cluster Load Test
         run: pnpm test:load
 
-      - name: Build Docker Server Image (Smoke Test)
-        run: docker build -f Dockerfile.server -t sketchboard-server:test .
+      - name: Build Docker Server Image
+        run: docker build -f Dockerfile.server -t ghcr.io/${{ github.repository }}/server:latest .
 
-      - name: Build Docker Web Image (Smoke Test)
-        run: docker build -f Dockerfile.web -t sketchboard-web:test .
+      - name: Build Docker Web Image
+        run: docker build -f Dockerfile.web -t ghcr.io/${{ github.repository }}/web:latest .
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Container Images to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push ghcr.io/${{ github.repository }}/server:latest
+          docker push ghcr.io/${{ github.repository }}/web:latest
+
+  k8s-smoke-test:
+    runs-on: ubuntu-latest
+    needs: [test-and-verify]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create 2-node Kind Cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: sketchboard-ci
+          config: deploy/k8s/kind-config.yaml
+          wait: 120s
+
+      - name: Build local container images
+        run: |
+          docker build -f Dockerfile.server -t ghcr.io/sketchboard/server:latest .
+          docker build -f Dockerfile.web -t ghcr.io/sketchboard/web:latest .
+
+      - name: Load images into Kind nodes
+        run: |
+          kind load docker-image ghcr.io/sketchboard/server:latest --name sketchboard-ci
+          kind load docker-image ghcr.io/sketchboard/web:latest --name sketchboard-ci
+
+      - name: Deploy Sketchboard via Kustomize
+        run: |
+          kubectl apply -k deploy/k8s
+          kubectl rollout status deployment/sketchboard-server -n sketchboard --timeout=180s
+          kubectl rollout status deployment/sketchboard-web -n sketchboard --timeout=180s
+
+      - name: Verify Kubernetes Cluster State
+        run: |
+          kubectl get pods -n sketchboard -o wide
+          kubectl get services -n sketchboard
+          kubectl get ingress -n sketchboard

@@ -49,5 +49,8 @@ k8s-up:
 k8s-down:
 	kubectl delete -k deploy/k8s
 
+k8s-smoke:
+	bash scripts/kind-smoke-test.sh
+
 clean:
 	pnpm clean
