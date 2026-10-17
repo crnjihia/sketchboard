@@ -8,7 +8,9 @@ import {
   getDeterministicUserColor,
 } from '@sketchboard/shared';
 import { CanvasContainer } from './components/CanvasContainer';
-import { HelpCircle, Users } from 'lucide-react';
+import { ExportModal } from './components/ExportModal';
+import { useCanvasStore } from './store/useCanvasStore';
+import { Users, Download } from 'lucide-react';
 
 interface OutboxItem {
   clientSeq: number;
@@ -27,6 +29,8 @@ export const App: React.FC = () => {
   const [savingStatus, setSavingStatus] = useState<string>('Saved');
   const [participantCount, setParticipantCount] = useState<number>(1);
   const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const { selectedIds } = useCanvasStore();
 
   // User identity
   const [userId] = useState(() => 'usr_' + Math.random().toString(36).substring(2, 9));
@@ -225,6 +229,30 @@ export const App: React.FC = () => {
             <span style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1' }}>{participantCount}</span>
           </div>
 
+          {/* Export Button */}
+          <button
+            onClick={() => setIsExportOpen(true)}
+            title="Export PNG or PDF (Ctrl+E)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Download size={14} />
+            <span>Export</span>
+          </button>
+
           {/* Current User Chip */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, borderLeft: '1px solid #334155', paddingLeft: 14 }}>
             <span
@@ -259,6 +287,15 @@ export const App: React.FC = () => {
           userName={userName}
         />
       </main>
+
+      {/* Export Options Modal (PNG / PDF) */}
+      <ExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        sceneCache={sceneCache}
+        selectedIds={selectedIds}
+        boardName={boardId}
+      />
     </div>
   );
 };

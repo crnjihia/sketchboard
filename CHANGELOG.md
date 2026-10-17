@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Offscreen PNG & PDF export engine**: Independent offscreen canvas rendering pipeline at 1x, 2x, or 3x retina scale without relying on current viewport pan and zoom.
+- **Selection only vs entire board export**: Content bounding box calculation with 32px padding for targeted or full canvas capture.
+- **Aspect-ratio responsive PDF generation**: Uses `jsPDF` to automatically select A4/A3 and landscape vs portrait orientation with proportional image margins.
+- **Nairobi timestamped footer**: PDF exports feature a Nairobi-time stamped footer (`Africa/Nairobi` timezone) with board name and `"Made with Sketchboard"`.
+- **Export options modal**: Interactive modal dialog (`Ctrl+E`) supporting format selection (PNG/PDF), scope, resolution scale, transparent background toggle, and progress indication.
+- **Redis hot update log & multi-node scaling**: Fast O(1) ingestion appending binary updates to `sketchboard:board:<boardId>:updates` with `@socket.io/redis-adapter` for multi-node room broadcasts.
+- **PostgreSQL snapshot compaction**: Tiered persistence compacting Redis logs into single PostgreSQL snapshots upon reaching update or size thresholds.
+- **Prometheus metrics & health endpoints**: Production observability at `/metrics` (connected sockets, active boards, updates/sec, p95 ACK latency) and `/readyz` / `/healthz` probes.
 - **Dual-layer HTML5 Canvas renderer**: Split architecture decoupling the static scene canvas from the interaction overlay canvas (selection bounds, resize handles, marquee box, and volatile cursors).
 - **Spatial grid index & viewport culling**: Uniform spatial grid (`SpatialGrid`) in `@sketchboard/shared` providing O(1) broadphase lookups and sub-millisecond viewport culling sustaining 60fps with 2,000 objects.
 - **Inverse transform hit-testing**: Exact hit-testing for arbitrarily rotated rectangles, ellipses, lines, arrows, smoothed freehand strokes, and 8 resize handles + rotation handle with touch target margins.
@@ -20,5 +28,5 @@ All notable changes to this project will be documented in this file.
 - **Yjs CRDT document model**: Property-level `Y.Map<string, Y.Map<string, any>>` objects model and `Y.Array<string>` z-order collection in `BoardDocManager`.
 - **Zero-allocation SceneCache**: Plain-JS derived scene cache subscribing via `observeDeep` to isolate the 60fps render loop from Yjs query overhead.
 - **Socket.io binary sync protocol**: Real-time sync pipeline supporting state vector diffs (`sync:step1`, `sync:step2`), optimistic local transactions, server ACKs (`sync:ack`), payload size bounds (256 KB), rate-limiting (60 ops/sec), and volatile cursor relay (`cursor:move`).
-- **Comprehensive test suites**: 21 unit, integration, and benchmark tests covering CRDT property-level conflict convergence and multi-client headless Socket.io sync loops.
-- **Architecture decision records**: ADRs 0001 (Monorepo), 0002 (Yjs over Socket.io), and 0003 (Property-level CRDT).
+- **Comprehensive test suites**: 25 unit, integration, and benchmark tests covering CRDT property-level conflict convergence and multi-client headless Socket.io sync loops.
+- **Architecture decision records**: ADRs 0001 (Monorepo), 0002 (Yjs over Socket.io), 0003 (Property-level CRDT), and 0004 (Redis hot log and compaction).
