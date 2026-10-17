@@ -148,6 +148,22 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
         case 'g':
           useCanvasStore.getState().toggleGrid();
           break;
+        case 'z':
+          if (cmdOrCtrl) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              docManager.redo();
+            } else {
+              docManager.undo();
+            }
+          }
+          break;
+        case 'y':
+          if (cmdOrCtrl) {
+            e.preventDefault();
+            docManager.redo();
+          }
+          break;
         case '?':
           setIsHelpOpen((prev) => !prev);
           break;
