@@ -25,18 +25,6 @@ interface ToolItem {
   icon: React.ReactNode;
 }
 
-const TOOLS: ToolItem[] = [
-  { id: 'select', label: 'Select (V)', shortcut: 'V', icon: <MousePointer size={18} /> },
-  { id: 'hand', label: 'Pan Hand (H / Space)', shortcut: 'H', icon: <Hand size={18} /> },
-  { id: 'rectangle', label: 'Rectangle (R)', shortcut: 'R', icon: <Square size={18} /> },
-  { id: 'ellipse', label: 'Ellipse (O)', shortcut: 'O', icon: <Circle size={18} /> },
-  { id: 'line', label: 'Line (L)', shortcut: 'L', icon: <Minus size={18} /> },
-  { id: 'arrow', label: 'Arrow (A)', shortcut: 'A', icon: <ArrowUpRight size={18} /> },
-  { id: 'freehand', label: 'Pen / Freehand (P)', shortcut: 'P', icon: <Pencil size={18} /> },
-  { id: 'text', label: 'Text (T)', shortcut: 'T', icon: <Type size={18} /> },
-  { id: 'sticky', label: 'Sticky Note (N)', shortcut: 'N', icon: <StickyNote size={18} /> },
-];
-
 export const Toolbar: React.FC = () => {
   const {
     tool,
@@ -47,9 +35,22 @@ export const Toolbar: React.FC = () => {
     toggleGrid,
     viewport,
     setViewport,
+    t,
   } = useCanvasStore();
 
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const TOOLS: ToolItem[] = [
+    { id: 'select', label: t.toolbar.select, shortcut: 'V', icon: <MousePointer size={18} /> },
+    { id: 'hand', label: t.toolbar.hand, shortcut: 'H', icon: <Hand size={18} /> },
+    { id: 'rectangle', label: t.toolbar.rectangle, shortcut: 'R', icon: <Square size={18} /> },
+    { id: 'ellipse', label: t.toolbar.ellipse, shortcut: 'O', icon: <Circle size={18} /> },
+    { id: 'line', label: t.toolbar.line, shortcut: 'L', icon: <Minus size={18} /> },
+    { id: 'arrow', label: t.toolbar.arrow, shortcut: 'A', icon: <ArrowUpRight size={18} /> },
+    { id: 'freehand', label: t.toolbar.pen, shortcut: 'P', icon: <Pencil size={18} /> },
+    { id: 'text', label: t.toolbar.text, shortcut: 'T', icon: <Type size={18} /> },
+    { id: 'sticky', label: t.toolbar.sticky, shortcut: 'N', icon: <StickyNote size={18} /> },
+  ];
 
   const currentColorEntry = SWAHILI_COLOR_MAP[activeColor as SwahiliColorName] ?? {
     hex: activeColor,
@@ -165,7 +166,7 @@ export const Toolbar: React.FC = () => {
       {/* Grid Toggle */}
       <button
         onClick={toggleGrid}
-        title="Toggle Grid (G)"
+        title={t.toolbar.grid}
         style={{
           width: 36,
           height: 36,
@@ -186,7 +187,7 @@ export const Toolbar: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, paddingLeft: 4 }}>
         <button
           onClick={() => handleZoom(-0.15)}
-          title="Zoom Out"
+          title={t.toolbar.zoomOut}
           style={{
             width: 28,
             height: 28,
@@ -205,7 +206,7 @@ export const Toolbar: React.FC = () => {
 
         <button
           onClick={resetZoom}
-          title="Reset Zoom to 100%"
+          title={t.toolbar.resetZoom}
           style={{
             height: 24,
             padding: '0 6px',
@@ -223,7 +224,7 @@ export const Toolbar: React.FC = () => {
 
         <button
           onClick={() => handleZoom(0.15)}
-          title="Zoom In"
+          title={t.toolbar.zoomIn}
           style={{
             width: 28,
             height: 28,

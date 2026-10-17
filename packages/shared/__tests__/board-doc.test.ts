@@ -151,4 +151,33 @@ describe('BoardDocManager CRDT Document Model', () => {
 
     cache.destroy();
   });
+
+  it('provides undo and redo scoped to user tracked origins', () => {
+    const manager = new BoardDocManager('board-1', undefined, new Set(['local']));
+
+    // 1. Add object locally
+    manager.addObject(sampleRect, 'local');
+    expect(manager.getObject('shape-1')).toBeDefined();
+    expect(manager.canUndo()).toBe(true);
+
+    // 2. Undo local addition
+    const undone = manager.undo();
+    expect(undone).toBe(true);
+    expect(manager.getObject('shape-1')).toBeNull();
+    expect(manager.canRedo()).toBe(true);
+
+    // 3. Redo local addition
+    const redone = manager.redo();
+    expect(redone).toBe(true);
+    expect(manager.getObject('shape-1')).toBeDefined();
+
+    // 4. Remote change with origin 'remote' should NOT be undone by local undoManager
+    manager.updateProperty('shape-1', 'x', 999, 'remote');
+    expect(manager.getObject('shape-1')?.x).toBe(999);
+
+    // Local undo should not revert remote change
+    manager.undo(); // reverts local add
+    expect(manager.getObject('shape-1')).toBeNull();
+  });
 });
+

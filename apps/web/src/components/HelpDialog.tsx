@@ -1,32 +1,37 @@
 import React from 'react';
 import { X, Keyboard } from 'lucide-react';
+import { useCanvasStore } from '../store/useCanvasStore';
 
 interface HelpDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const SHORTCUTS = [
-  { key: 'V', desc: 'Select / Move / Resize / Rotate' },
-  { key: 'H / Space', desc: 'Pan / Hand tool' },
-  { key: 'R', desc: 'Rectangle shape' },
-  { key: 'O', desc: 'Ellipse shape' },
-  { key: 'L', desc: 'Line tool' },
-  { key: 'A', desc: 'Arrow tool' },
-  { key: 'P', desc: 'Freehand pen / drawing' },
-  { key: 'T', desc: 'Text box' },
-  { key: 'N', desc: 'Sticky note (with Swahili color & author tag)' },
-  { key: 'G', desc: 'Toggle background grid' },
-  { key: 'Delete / ⌫', desc: 'Delete selected shapes' },
-  { key: 'Ctrl/Cmd + D', desc: 'Duplicate selected shapes' },
-  { key: 'Ctrl/Cmd + A', desc: 'Select all shapes on board' },
-  { key: '[  /  ]', desc: 'Send backward / Bring forward in z-order' },
-  { key: 'Arrows', desc: 'Nudge 1px (Shift+Arrow for 10px)' },
-  { key: '?', desc: 'Toggle this keyboard shortcuts dialog' },
-];
-
 export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
+  const { t } = useCanvasStore();
+
   if (!isOpen) return null;
+
+  const SHORTCUTS = [
+    { key: 'V', desc: t.help.shortcuts.select },
+    { key: 'H / Space', desc: t.help.shortcuts.hand },
+    { key: 'R', desc: t.help.shortcuts.rectangle },
+    { key: 'O', desc: t.help.shortcuts.ellipse },
+    { key: 'L', desc: t.help.shortcuts.line },
+    { key: 'A', desc: t.help.shortcuts.arrow },
+    { key: 'P', desc: t.help.shortcuts.pen },
+    { key: 'T', desc: t.help.shortcuts.text },
+    { key: 'N', desc: t.help.shortcuts.sticky },
+    { key: 'G', desc: t.help.shortcuts.grid },
+    { key: 'Ctrl/Cmd + Z', desc: t.help.shortcuts.undo },
+    { key: 'Ctrl/Cmd + Shift + Z', desc: t.help.shortcuts.redo },
+    { key: 'Delete / ⌫', desc: t.help.shortcuts.delete },
+    { key: 'Ctrl/Cmd + D', desc: t.help.shortcuts.duplicate },
+    { key: 'Ctrl/Cmd + A', desc: t.help.shortcuts.selectAll },
+    { key: '[  /  ]', desc: t.help.shortcuts.zOrder },
+    { key: 'Arrows', desc: t.help.shortcuts.nudge },
+    { key: '?', desc: t.help.shortcuts.help },
+  ];
 
   return (
     <div
@@ -62,7 +67,7 @@ export const HelpDialog: React.FC<HelpDialogProps> = ({ isOpen, onClose }) => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Keyboard size={20} color="#60a5fa" />
-            <h3 style={{ fontSize: 17, fontWeight: 600 }}>Keyboard Shortcuts & Gestures</h3>
+            <h3 style={{ fontSize: 17, fontWeight: 600 }}>{t.help.title}</h3>
           </div>
           <button
             onClick={onClose}

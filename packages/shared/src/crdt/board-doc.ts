@@ -19,14 +19,54 @@ import {
 export class BoardDocManager {
   public readonly doc: Y.Doc;
   public readonly boardId: string;
+  private _undoManager?: Y.UndoManager;
+  private trackedOrigins?: Set<any>;
   private readonly objectsMap: Y.Map<Y.Map<any>>;
   private readonly zOrderArray: Y.Array<string>;
 
-  constructor(boardId: string, doc?: Y.Doc) {
+  constructor(boardId: string, doc?: Y.Doc, trackedOrigins?: Set<any>) {
     this.boardId = boardId;
     this.doc = doc ?? new Y.Doc({ gc: true });
     this.objectsMap = this.doc.getMap<Y.Map<any>>('objects');
     this.zOrderArray = this.doc.getArray<string>('zOrder');
+    this.trackedOrigins = trackedOrigins;
+
+    if (trackedOrigins) {
+      this._undoManager = new Y.UndoManager([this.objectsMap, this.zOrderArray], {
+        trackedOrigins,
+      });
+    }
+  }
+
+  public get undoManager(): Y.UndoManager {
+    if (!this._undoManager) {
+      this._undoManager = new Y.UndoManager([this.objectsMap, this.zOrderArray], {
+        trackedOrigins: this.trackedOrigins ?? new Set(['local']),
+      });
+    }
+    return this._undoManager;
+  }
+
+  /**
+   * Reverts the last locally tracked operation.
+   */
+  public undo(): boolean {
+    return this.undoManager.undo() !== null;
+  }
+
+  /**
+   * Re-applies the last undone operation.
+   */
+  public redo(): boolean {
+    return this.undoManager.redo() !== null;
+  }
+
+  public canUndo(): boolean {
+    return this._undoManager ? this._undoManager.canUndo() : false;
+  }
+
+  public canRedo(): boolean {
+    return this._undoManager ? this._undoManager.canRedo() : false;
   }
 
   /**
@@ -279,9 +319,34 @@ export class BoardDocManager {
   }
 
   /**
+   * Subscribes to document updates, returning an unbind function.
+   */
+  public onUpdate(callback: (update: Uint8Array, origin: any) => void): () => void {
+    const handler = (update: Uint8Array, origin: any) => {
+      callback(update, origin);
+    };
+    this.doc.on('update', handler);
+    return () => {
+      this.doc.off('update', handler);
+    };
+  }
+
+  /**
+   * Subscribes strictly to local document updates, returning an unbind function.
+   */
+  public onLocalUpdate(callback: (update: Uint8Array) => void): () => void {
+    return this.onUpdate((update, origin) => {
+      if (origin === 'local' || origin === undefined) {
+        callback(update);
+      }
+    });
+  }
+
+  /**
    * Destroys this manager and cleans up Y.Doc resources.
    */
   public destroy(): void {
     this.doc.destroy();
   }
 }
+

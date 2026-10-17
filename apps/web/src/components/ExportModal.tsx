@@ -9,6 +9,8 @@ import {
   ExportOptions,
 } from '../export/export-engine';
 
+import { useCanvasStore } from '../store/useCanvasStore';
+
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,6 +26,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   selectedIds,
   boardName,
 }) => {
+  const { t } = useCanvasStore();
   const [format, setFormat] = useState<'png' | 'pdf'>('png');
   const [scope, setScope] = useState<'all' | 'selection'>('all');
   const [scale, setScale] = useState<1 | 2 | 3>(2);
@@ -120,7 +123,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Download size={20} color="#60a5fa" />
-            <h3 style={{ fontSize: 18, fontWeight: 600 }}>Export Board</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 600 }}>{t.exportModal.title}</h3>
           </div>
           <button
             onClick={onClose}
@@ -138,7 +141,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         {/* Format Selector */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>Format</label>
+          <label style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>{t.exportModal.format}</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <button
               type="button"
@@ -158,7 +161,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <FileImage size={18} /> PNG Image
+              <FileImage size={18} /> {t.exportModal.png}
             </button>
 
             <button
@@ -179,14 +182,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 cursor: 'pointer',
               }}
             >
-              <FileText size={18} /> PDF Document
+              <FileText size={18} /> {t.exportModal.pdf}
             </button>
           </div>
         </div>
 
         {/* Scope Selector */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>Export Scope</label>
+          <label style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>{t.exportModal.area}</label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <button
               type="button"
@@ -202,7 +205,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 cursor: 'pointer',
               }}
             >
-              Entire Board
+              {t.exportModal.entireBoard}
             </button>
 
             <button
@@ -221,7 +224,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 opacity: hasSelection ? 1 : 0.6,
               }}
             >
-              Selection ({selectedIds.length})
+              {t.exportModal.selectionOnly} ({selectedIds.length})
             </button>
           </div>
         </div>
@@ -229,8 +232,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         {/* Resolution Scale */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>Resolution Scale</label>
-            <span style={{ fontSize: 12, color: '#64748b' }}>2x recommended for crisp retina display</span>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>{t.exportModal.scale}</label>
+            <span style={{ fontSize: 12, color: '#64748b' }}>2x HD retina</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             {[1, 2, 3].map((s) => (

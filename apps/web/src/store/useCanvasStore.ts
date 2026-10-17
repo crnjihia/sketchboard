@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ViewportState } from '@sketchboard/shared';
+import { Locale, Translations, translations } from '../i18n';
 
 export type ToolType =
   | 'select'
@@ -34,6 +35,10 @@ export interface CanvasState {
   culledCount: number;
   totalCount: number;
 
+  // i18n
+  locale: Locale;
+  t: Translations;
+
   // Actions
   setTool: (tool: ToolType) => void;
   setSelectedIds: (ids: string[]) => void;
@@ -47,6 +52,7 @@ export interface CanvasState {
   toggleGrid: () => void;
   setEditingId: (id: string | null) => void;
   setPerfMetrics: (metrics: { fps: number; culledCount: number; totalCount: number }) => void;
+  setLocale: (locale: Locale) => void;
 }
 
 const checkDebugFlag = () => {
@@ -76,6 +82,9 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   culledCount: 0,
   totalCount: 0,
 
+  locale: 'en',
+  t: translations['en'],
+
   setTool: (tool) => set({ tool, selectedIds: tool === 'select' ? undefined : [] }),
   setSelectedIds: (selectedIds) => set({ selectedIds }),
   toggleSelectId: (id) =>
@@ -102,4 +111,6 @@ export const useCanvasStore = create<CanvasState>((set) => ({
   toggleGrid: () => set((state) => ({ gridEnabled: !state.gridEnabled })),
   setEditingId: (editingId) => set({ editingId }),
   setPerfMetrics: (metrics) => set(metrics),
+  setLocale: (locale) => set({ locale, t: translations[locale] }),
 }));
+

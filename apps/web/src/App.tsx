@@ -33,7 +33,7 @@ export const App: React.FC = () => {
   const [participantCount, setParticipantCount] = useState<number>(1);
   const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
   const [isExportOpen, setIsExportOpen] = useState(false);
-  const { selectedIds } = useCanvasStore();
+  const { selectedIds, locale, setLocale, t } = useCanvasStore();
 
   // User identity
   const [userId] = useState(() => 'usr_' + Math.random().toString(36).substring(2, 9));
@@ -43,8 +43,8 @@ export const App: React.FC = () => {
   });
   const userColor = useMemo(() => getDeterministicUserColor(userId), [userId]);
 
-  // CRDT Document and Scene Cache singletons
-  const docManager = useMemo(() => new BoardDocManager(boardId), [boardId]);
+  // CRDT Document and Scene Cache singletons (with user-scoped UndoManager)
+  const docManager = useMemo(() => new BoardDocManager(boardId, undefined, new Set(['local'])), [boardId]);
   const sceneCache = useMemo(() => new SceneCache(docManager), [docManager]);
 
   // Outbox for reliable optimistic updates
@@ -232,6 +232,42 @@ export const App: React.FC = () => {
             <span style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1' }}>{participantCount}</span>
           </div>
 
+          {/* Language Switcher (EN / SW) */}
+          <div style={{ display: 'flex', background: '#1e293b', borderRadius: 8, border: '1px solid #334155', overflow: 'hidden' }}>
+            <button
+              onClick={() => setLocale('en')}
+              title="English"
+              style={{
+                padding: '4px 8px',
+                fontSize: 11,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                background: locale === 'en' ? '#3b82f6' : 'transparent',
+                color: locale === 'en' ? '#ffffff' : '#94a3b8',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLocale('sw')}
+              title="Kiswahili"
+              style={{
+                padding: '4px 8px',
+                fontSize: 11,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                background: locale === 'sw' ? '#3b82f6' : 'transparent',
+                color: locale === 'sw' ? '#ffffff' : '#94a3b8',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              SW
+            </button>
+          </div>
+
           {/* Export Button */}
           <button
             onClick={() => setIsExportOpen(true)}
@@ -253,7 +289,7 @@ export const App: React.FC = () => {
             }}
           >
             <Download size={14} />
-            <span>Export</span>
+            <span>{t.header.export}</span>
           </button>
 
           {/* Current User Chip */}
@@ -279,6 +315,27 @@ export const App: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* Offline Reconnect Banner */}
+      {!connected && (
+        <div
+          style={{
+            background: '#b91c1c',
+            color: '#fef2f2',
+            padding: '6px 16px',
+            fontSize: 12,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            boxShadow: '0 2px 8px rgba(185, 28, 28, 0.4)',
+            zIndex: 35,
+          }}
+        >
+          <span>⚠️ {t.toast.offlineWarning}</span>
+        </div>
+      )}
 
       {/* Main Dual-Layer Canvas Container */}
       <main style={{ flex: 1, position: 'relative' }}>
