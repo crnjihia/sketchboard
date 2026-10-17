@@ -70,17 +70,17 @@ export class BoardDocManager {
   /**
    * Updates an individual property on a shape (property-level CRDT).
    */
-  public updateProperty<K extends keyof CanvasObject>(
+  public updateProperty(
     id: string,
-    property: K,
-    value: CanvasObject[K],
+    property: string,
+    value: any,
     origin?: any
   ): boolean {
     let updated = false;
     this.transact(() => {
       const innerMap = this.objectsMap.get(id);
       if (innerMap) {
-        innerMap.set(property as string, value);
+        innerMap.set(property, value);
         innerMap.set('updatedAt', Date.now());
         updated = true;
       }
