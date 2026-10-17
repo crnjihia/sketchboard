@@ -44,6 +44,12 @@ test.beforeAll(async () => {
         '/socket.io': {
           target: `http://127.0.0.1:${serverPort}`,
           ws: true,
+          configure: (proxy) => {
+            proxy.on('error', (err: any) => {
+              if (['ECONNABORTED', 'ECONNRESET', 'EPIPE'].includes(err.code)) return;
+              console.warn('[Proxy Warning]:', err.message);
+            });
+          },
         },
       },
     },

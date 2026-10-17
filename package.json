@@ -14,7 +14,7 @@
     "test:load": "tsx scripts/load-test.ts",
     "test:e2e": "playwright test",
     "seed": "tsx scripts/seed-demo.ts",
-    "lint": "echo \"Linting workspace...\"",
+    "lint": "pnpm --filter \"@sketchboard/*\" exec tsc --noEmit",
     "clean": "node -e \"console.log('cleaning...')\""
   },
   "devDependencies": {
