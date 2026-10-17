@@ -8,6 +8,7 @@
 </p>
 
 <p align="center">
+  <a href="https://crnjihia.github.io/sketchboard/"><img src="https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github" alt="Live Demo"></a>
   <a href="#problem-statement"><img src="https://img.shields.io/badge/Context-Kenyan%20Fintech%20%26%20Remote%20Squads-0F172A?style=flat-square" alt="Context"></a>
   <a href="#architecture"><img src="https://img.shields.io/badge/CRDT-Yjs%20Binary%20Sync-blue?style=flat-square" alt="CRDT"></a>
   <a href="#test-results"><img src="https://img.shields.io/badge/Vitest-27%20Passed-10B981?style=flat-square" alt="Tests"></a>
