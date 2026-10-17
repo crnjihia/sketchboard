@@ -11,8 +11,13 @@
   <a href="#problem-statement"><img src="https://img.shields.io/badge/Context-Kenyan%20Fintech%20%26%20Remote%20Squads-0F172A?style=flat-square" alt="Context"></a>
   <a href="#architecture"><img src="https://img.shields.io/badge/CRDT-Yjs%20Binary%20Sync-blue?style=flat-square" alt="CRDT"></a>
   <a href="#test-results"><img src="https://img.shields.io/badge/Vitest-27%20Passed-10B981?style=flat-square" alt="Tests"></a>
+  <a href="#multi-browser-collaboration-e2e"><img src="https://img.shields.io/badge/Playwright%20E2E-Multi--Browser%20Sync-6366F1?style=flat-square" alt="E2E"></a>
   <a href="#chaos-and-load-testing"><img src="https://img.shields.io/badge/Chaos%20Failover-0%20Edits%20Lost-emerald?style=flat-square" alt="Chaos"></a>
   <a href="#cluster-load-benchmarks"><img src="https://img.shields.io/badge/Load%20Test-100%25%20ACK-F59E0B?style=flat-square" alt="Load"></a>
+</p>
+
+<p align="center">
+  <img src="docs/assets/hero-screenshot.png" alt="Sketchboard Interactive Canvas Screenshot" width="95%" style="border-radius: 8px; border: 1px solid #1e293b; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
 </p>
 
 ---
@@ -363,6 +368,19 @@ Broadcast Latency p95   : 0.00 ms
 Broadcast Latency p99   : 0.00 ms
 =======================================================
 ✅ [Load Test Completed Successfully]
+```
+
+### 3. Multi-Browser Collaboration E2E (`make test-e2e`)
+Runs automated Playwright verification across two isolated browser contexts simulating two engineers collaborating in real-time on a live board:
+- Drawing a shape in Browser A replicates to Browser B in real-time (`< 200ms`).
+- User B adds a Swahili sticky note with author tag.
+- Concurrent drag convergence on the same shape without collision or data loss.
+- High-frequency volatile cursor tracking.
+- Page reload state recovery from server snapshot.
+- Captures reproducible hero screenshot to `docs/assets/hero-screenshot.png`.
+
+```bash
+pnpm test:e2e
 ```
 
 ---

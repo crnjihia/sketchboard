@@ -30,12 +30,15 @@ export function setupSocketHandlers(io: Server, sessionManager: BoardSessionMana
         lastSeen: Date.now(),
       });
 
-      // Send initial snapshot directly to joining client
+      // Send initial snapshot directly to joining client with active participant count
+      const roomSockets = io.sockets.adapter.rooms.get(boardId);
+      const participantCount = roomSockets ? roomSockets.size : 1;
       const snapshot = session.getSnapshot();
       socket.emit('sync:init', {
         boardId,
         snapshot: Buffer.from(snapshot),
         nodeId: config.nodeId,
+        participantCount,
       });
 
       // Notify others in room

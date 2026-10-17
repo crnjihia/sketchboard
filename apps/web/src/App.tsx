@@ -47,6 +47,19 @@ export const App: React.FC = () => {
   const docManager = useMemo(() => new BoardDocManager(boardId, undefined, new Set(['local'])), [boardId]);
   const sceneCache = useMemo(() => new SceneCache(docManager), [docManager]);
 
+  // Expose for Playwright E2E assertions
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__SKETCHBOARD__ = {
+        docManager,
+        sceneCache,
+        userId,
+        userName,
+        userColor,
+      };
+    }
+  }, [docManager, sceneCache, userColor, userId, userName]);
+
   // Outbox for reliable optimistic updates
   const outboxRef = useRef<Map<number, OutboxItem>>(new Map());
   const seqCounterRef = useRef<number>(1);
@@ -88,8 +101,9 @@ export const App: React.FC = () => {
       setSavingStatus(pending > 0 ? `Offline (${pending} pending)` : 'Offline');
     });
 
-    socket.on('sync:init', (data: { snapshot: ArrayBuffer; nodeId?: string }) => {
+    socket.on('sync:init', (data: { snapshot: ArrayBuffer; nodeId?: string; participantCount?: number }) => {
       if (data.nodeId) setNodeId(data.nodeId);
+      if (data.participantCount !== undefined) setParticipantCount(data.participantCount);
       docManager.applyUpdate(new Uint8Array(data.snapshot));
     });
 
@@ -211,7 +225,7 @@ export const App: React.FC = () => {
         {/* Sync Status, Node Info & Participants */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13 }}>
           {/* Connection & Save Status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div data-testid="connection-status" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span
               style={{
                 width: 8,
@@ -227,15 +241,16 @@ export const App: React.FC = () => {
           </div>
 
           {/* Active Participants */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e293b', padding: '3px 10px', borderRadius: 20, border: '1px solid #334155' }}>
+          <div data-testid="participant-badge" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e293b', padding: '3px 10px', borderRadius: 20, border: '1px solid #334155' }}>
             <Users size={14} color="#60a5fa" />
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1' }}>{participantCount}</span>
+            <span data-testid="participant-count" style={{ fontSize: 12, fontWeight: 600, color: '#cbd5e1' }}>{participantCount}</span>
           </div>
 
           {/* Language Switcher (EN / SW) */}
           <div style={{ display: 'flex', background: '#1e293b', borderRadius: 8, border: '1px solid #334155', overflow: 'hidden' }}>
             <button
               onClick={() => setLocale('en')}
+              data-testid="lang-en"
               title="English"
               style={{
                 padding: '4px 8px',
@@ -252,6 +267,7 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setLocale('sw')}
+              data-testid="lang-sw"
               title="Kiswahili"
               style={{
                 padding: '4px 8px',
@@ -271,6 +287,7 @@ export const App: React.FC = () => {
           {/* Export Button */}
           <button
             onClick={() => setIsExportOpen(true)}
+            data-testid="export-button"
             title="Export PNG or PDF (Ctrl+E)"
             style={{
               display: 'flex',

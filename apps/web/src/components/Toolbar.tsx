@@ -96,6 +96,8 @@ export const Toolbar: React.FC = () => {
             <button
               key={t.id}
               onClick={() => setTool(t.id)}
+              data-tool={t.id}
+              data-testid={`tool-${t.id}`}
               title={t.label}
               style={{
                 width: 36,
