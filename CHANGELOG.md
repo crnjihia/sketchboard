@@ -49,3 +49,7 @@ Initial production release of **Sketchboard**: a Figma-grade real-time collabora
 - **Docker Compose Production Topology**: 2 server nodes, Redis, Postgres, Web, and NGINX Load Balancer on port `8080`.
 - **Kubernetes Manifests (Kustomize)**: Deployments with pod anti-affinity, RollingUpdate, PDB (`maxUnavailable: 1`), HPA, and NGINX Ingress sticky session cookie annotations.
 - **Automated Chaos & Load Benchmarks**: Pod crash failover test (0 edits lost) and 50-socket cluster load benchmark.
+- **Playwright Multi-Browser Collaboration Verification**: Automated multi-context browser test suite (`make test-e2e`) verifying real-time cross-client replication, concurrent drag convergence, live cursors, and reload state recovery.
+- **Automated Hero Screenshot Generation**: Reproducible browser viewport capture to `docs/assets/hero-screenshot.png`.
+- **Automated Kind 2-Node Kubernetes Smoke Test**: Scripts (`make k8s-smoke`) verifying full cluster deployment and pod readiness across a 2-worker node Kind cluster.
+- **GitHub Container Registry (GHCR) & GitHub Pages Workflows**: Automated container publishing and web deployment pipelines.
