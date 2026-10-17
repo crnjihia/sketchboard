@@ -2,31 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+---
+
+## [1.0.0] - 2026-10-17
+
+Initial production release of **Sketchboard**: a Figma-grade real-time collaborative canvas built for Kenyan design, fintech, and product engineering squads.
 
 ### Added
-- **Offscreen PNG & PDF export engine**: Independent offscreen canvas rendering pipeline at 1x, 2x, or 3x retina scale without relying on current viewport pan and zoom.
-- **Selection only vs entire board export**: Content bounding box calculation with 32px padding for targeted or full canvas capture.
-- **Aspect-ratio responsive PDF generation**: Uses `jsPDF` to automatically select A4/A3 and landscape vs portrait orientation with proportional image margins.
-- **Nairobi timestamped footer**: PDF exports feature a Nairobi-time stamped footer (`Africa/Nairobi` timezone) with board name and `"Made with Sketchboard"`.
-- **Export options modal**: Interactive modal dialog (`Ctrl+E`) supporting format selection (PNG/PDF), scope, resolution scale, transparent background toggle, and progress indication.
-- **Redis hot update log & multi-node scaling**: Fast O(1) ingestion appending binary updates to `sketchboard:board:<boardId>:updates` with `@socket.io/redis-adapter` for multi-node room broadcasts.
-- **PostgreSQL snapshot compaction**: Tiered persistence compacting Redis logs into single PostgreSQL snapshots upon reaching update or size thresholds.
-- **Prometheus metrics & health endpoints**: Production observability at `/metrics` (connected sockets, active boards, updates/sec, p95 ACK latency) and `/readyz` / `/healthz` probes.
-- **Dual-layer HTML5 Canvas renderer**: Split architecture decoupling the static scene canvas from the interaction overlay canvas (selection bounds, resize handles, marquee box, and volatile cursors).
-- **Spatial grid index & viewport culling**: Uniform spatial grid (`SpatialGrid`) in `@sketchboard/shared` providing O(1) broadphase lookups and sub-millisecond viewport culling sustaining 60fps with 2,000 objects.
-- **Inverse transform hit-testing**: Exact hit-testing for arbitrarily rotated rectangles, ellipses, lines, arrows, smoothed freehand strokes, and 8 resize handles + rotation handle with touch target margins.
-- **Interactive canvas tools**: Support for Select (V), Pan/Hand (H/Space), Rectangle (R), Ellipse (O), Line (L), Arrow (A), Freehand pen (P) with Chaikin smoothing and `Path2D` caching, Text (T), and Sticky notes (N).
-- **Swahili color picker & author tags**: Sticky notes with author tags ("— Amina Kimani") and Swahili color selection (`Njano`, `Waridi`, `Kijani`, `Buluu`, etc.).
-- **Positioned DOM textarea overlay**: Seamless text and sticky note inline editing committing directly to Y.Doc upon blur/Enter.
-- **Pan & Zoom engine**: Infinite canvas with adaptive dot grid, cursor-anchored wheel zooming (10% to 400%), middle-click / space-drag panning, and multi-touch pinch zoom for mobile devices.
-- **Performance HUD**: Real-time FPS, rendered vs culled objects, and viewport stats activated via `?debug=1`.
-- **Keyboard shortcuts modal**: Interactive `?` help dialog detailing keybindings and touch gestures.
-- **Monorepo architecture**: Initialized pnpm workspaces monorepo structure with `packages/shared`, `apps/server`, and `apps/web`.
-- **Kenyan Swahili colour palette**: Single source of truth in `@sketchboard/shared` featuring `Njano`, `Waridi`, `Kijani`, `Buluu`, `Machungwa`, `Zambarau`, `Nyekundu`, `Kijivu` with deterministic user color hashing and collision avoidance.
-- **Canvas object schemas**: Zod validation schemas and TypeScript types for `rectangle`, `ellipse`, `line`, `arrow`, `freehand`, `text`, and `sticky`.
-- **Yjs CRDT document model**: Property-level `Y.Map<string, Y.Map<string, any>>` objects model and `Y.Array<string>` z-order collection in `BoardDocManager`.
-- **Zero-allocation SceneCache**: Plain-JS derived scene cache subscribing via `observeDeep` to isolate the 60fps render loop from Yjs query overhead.
-- **Socket.io binary sync protocol**: Real-time sync pipeline supporting state vector diffs (`sync:step1`, `sync:step2`), optimistic local transactions, server ACKs (`sync:ack`), payload size bounds (256 KB), rate-limiting (60 ops/sec), and volatile cursor relay (`cursor:move`).
-- **Comprehensive test suites**: 25 unit, integration, and benchmark tests covering CRDT property-level conflict convergence and multi-client headless Socket.io sync loops.
-- **Architecture decision records**: ADRs 0001 (Monorepo), 0002 (Yjs over Socket.io), 0003 (Property-level CRDT), and 0004 (Redis hot log and compaction).
+
+#### Core Real-Time Engine & CRDT
+- **Yjs Binary Transport over Socket.io**: Unified WebSocket and polling transport carrying native `yjs` binary updates without relying on `y-websocket`.
+- **Property-Level CRDT Granularity**: Document model using `Y.Map<string, Y.Map<string, any>>` ("objects") and `Y.Array<string>` ("zOrder"). Non-conflicting edits to different properties of the same shape merge seamlessly.
+- **User-Scoped Undo/Redo**: Implemented `Y.UndoManager` tracking strictly local origin transactions (`'local'`), ensuring users can undo their own changes without reverting peer squad edits.
+- **Optimistic UI with Outbox Queue**: Local edits apply instantly at 60fps; unacknowledged changes are held in an outbox map and re-transmitted upon reconnect.
+- **Property-Based CRDT Convergence Test**: Automated fuzzing test validating 4 concurrent clients under randomized operation order and 25% duplicate packet loss converge byte-identically.
+
+#### Dual-Layer Canvas Renderer (HTML5 2D API)
+- **Zero Third-Party Canvas Libraries**: Implemented using pure browser Canvas 2D API without heavy wrappers (no Konva, no Fabric, no Pixi).
+- **Dual-Layer Architecture**:
+  - *Bottom Layer*: Static scene canvas updated strictly upon document mutations.
+  - *Top Layer*: Interaction overlay rendering multi-select bounding boxes, 8 resize handles, rotation handle, marquee selection box, and live remote cursors at 60fps.
+- **Spatial Grid Broadphase Indexing**: Custom `SpatialGrid` partitioning world space into cells, achieving viewport culling in `< 1ms` across 2,000 objects.
+- **Interactive Shape Tools**: Selection/Transform (V), Hand/Pan (H/Space), Rectangle (R), Ellipse (O), Line (L), Arrow (A), Freehand Pen (P) with Chaikin smoothing and `Path2D` caching, Text (T), and Sticky notes (N).
+- **Inverse Matrix Hit-Testing**: Rotated bounding box hit-detection with padding for touch devices.
+- **DOM Inline Editing Overlay**: Seamless text editing overlay for text boxes and sticky notes committing on blur or Enter.
+
+#### Design System & Internationalization
+- **Kenyan Swahili Colour Palette**: Defined single source of truth in `@sketchboard/shared`: `Njano` (Yellow), `Waridi` (Pink), `Kijani` (Green), `Buluu` (Blue), `Machungwa` (Orange), `Zambarau` (Purple), `Nyekundu` (Red), `Kijivu` (Grey).
+- **Deterministic Cursor Colors**: Hash-based deterministic color assignment with local collision avoidance.
+- **Bilingual UI (English & Kiswahili)**: Interactive language switch (`EN | SW`) toggling all toolbar tools, dialogs, and status badges.
+- **Offline Resilience Banner**: Real-time alert banner indicating when network connectivity is lost.
+
+#### Offscreen Export Engine (PNG & PDF)
+- **High-DPI Offscreen PNG Export**: Pure canvas rasterization at 1x, 2x, and 3x scale with optional transparent background.
+- **Responsive PDF Generation**: Multi-page orientation matching (A4/A3 landscape/portrait) via `jsPDF`.
+- **Nairobi Timestamped Footer**: Exports automatically stamped with `Africa/Nairobi` timezone, board title, and `"Made with Sketchboard"`.
+- **Interactive Export Modal**: Triggered via `Ctrl+E` or header button with progress feedback.
+
+#### Distributed Multi-Node DevOps & Kubernetes
+- **Multi-Node Redis Clustering**: `@socket.io/redis-adapter` relaying room broadcasts across multiple server replicas.
+- **Redis Hot Update Log & Compaction**: Append-only list (`sketchboard:board:<boardId>:updates`) compacted into PostgreSQL `boards` snapshots upon reaching update or size thresholds with distributed locking.
+- **Docker Multi-Stage Images**: Non-root production containers for server and web with HTTP healthchecks.
+- **Docker Compose Production Topology**: 2 server nodes, Redis, Postgres, Web, and NGINX Load Balancer on port `8080`.
+- **Kubernetes Manifests (Kustomize)**: Deployments with pod anti-affinity, RollingUpdate, PDB (`maxUnavailable: 1`), HPA, and NGINX Ingress sticky session cookie annotations.
+- **Automated Chaos & Load Benchmarks**: Pod crash failover test (0 edits lost) and 50-socket cluster load benchmark.
