@@ -1,3 +1,4 @@
+// path: apps/web/vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -20,6 +21,10 @@ export default defineConfig({
             console.warn('[Vite Proxy]:', err.message);
           });
         },
+      },
+      '/api': {
+        target: process.env.VITE_SERVER_URL || 'http://localhost:4000',
+        changeOrigin: true,
       },
     },
   },
