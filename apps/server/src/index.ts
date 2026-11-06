@@ -59,8 +59,8 @@ export function createSketchboardServer() {
     const url = req.url || '/';
     const method = req.method;
 
-    // 1. Healthcheck Endpoint
-    if (url === '/health' && method === 'GET') {
+    // 1. Healthcheck & Readiness Endpoints
+    if ((url === '/health' || url === '/healthz' || url === '/readyz') && method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
