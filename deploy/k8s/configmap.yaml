@@ -12,3 +12,5 @@ data:
   DATABASE_URL: "postgres://postgres:sketchboard_secret@postgres-service.sketchboard.svc.cluster.local:5432/sketchboard"
   COMPACTION_THRESHOLD: "50"
   COMPACTION_MAX_BYTES: "524288"
+  MPESA_MOCK: "true"
+  AFRICASTALKING_MOCK: "true"

@@ -50,6 +50,8 @@ services:
       DATABASE_URL: "postgres://postgres:sketchboard_secret@postgres:5432/sketchboard"
       ENABLE_POSTGRES: "true"
       COMPACTION_THRESHOLD: "50"
+      MPESA_MOCK: "true"
+      AFRICASTALKING_MOCK: "true"
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,6 +76,8 @@ services:
       DATABASE_URL: "postgres://postgres:sketchboard_secret@postgres:5432/sketchboard"
       ENABLE_POSTGRES: "true"
       COMPACTION_THRESHOLD: "50"
+      MPESA_MOCK: "true"
+      AFRICASTALKING_MOCK: "true"
     depends_on:
       postgres:
         condition: service_healthy
