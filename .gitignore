@@ -5,7 +5,6 @@ dist/
 .pnp*
 .pnp.js
 .vscode/
-.claude/
 .DS_Store
 *.log
 .env
