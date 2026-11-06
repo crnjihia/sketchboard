@@ -1,3 +1,4 @@
+// path: apps/web/src/canvas/renderers/overlay-renderer.ts
 import {
   CanvasObject,
   ViewportState,

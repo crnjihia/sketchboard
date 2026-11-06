@@ -2,6 +2,7 @@
 import { Server, Socket } from 'socket.io';
 import { BoardSessionManager } from './board-session';
 import { redisService, PresenceRecord } from './redis-adapter';
+import { config } from '../config';
 import { metrics } from './metrics';
 
 interface JoinBoardPayload {
@@ -12,8 +13,8 @@ interface JoinBoardPayload {
 }
 
 /**
- * Sets up Socket.io event handlers for board synchronization.
- * Implements the protocol expected by the server‑side tests and the Playwright e2e test.
+ * Sets up Socket.io event handlers for board synchronization, live awareness,
+ * and volatile cursor tracking with rate limiting and payload validation.
  */
 export function setupSocketHandlers(io: Server, sessionManager: BoardSessionManager): void {
   io.on('connection', (socket: Socket) => {
@@ -30,14 +31,15 @@ export function setupSocketHandlers(io: Server, sessionManager: BoardSessionMana
       socket.join(boardId);
 
       // Notify other clients that a new participant has joined
-      socket.to(boardId).emit('presence:join');
+      socket.to(boardId).emit('presence:join', { userId, userName, userColor });
+
       // Register socket for rate limiting / cleanup
       sessionManager.registerSocket(socket.id, boardId);
 
-      // Update presence (used by UI, optional for tests)
+      // Update presence record in Redis / memory
       await redisService.updatePresence(boardId, currentUser);
 
-      // Load or create the in‑memory board session
+      // Load or create the in-memory board session
       const session = await sessionManager.getOrCreateSession(boardId);
 
       // Determine participant count (including this socket)
@@ -53,6 +55,22 @@ export function setupSocketHandlers(io: Server, sessionManager: BoardSessionMana
       const { boardId, update, clientSeq } = payload;
       const upd = update instanceof Uint8Array ? update : new Uint8Array(update);
 
+      // 1. Guard update payload size against memory exhaustion attacks
+      if (upd.byteLength > config.maxPayloadBytes) {
+        socket.emit('error:payload_too_large', {
+          message: `Update payload size of ${upd.byteLength} bytes exceeds limit of ${config.maxPayloadBytes} bytes`,
+        });
+        return;
+      }
+
+      // 2. Guard per-socket update rate limit
+      if (!sessionManager.checkRateLimit(socket.id, config.rateLimitPerSec)) {
+        socket.emit('error:rate_limit', {
+          message: `Update rate limit exceeded (maximum ${config.rateLimitPerSec} updates per second)`,
+        });
+        return;
+      }
+
       // Record the update for persistence / compaction
       await sessionManager.recordUpdate(boardId, upd);
 
@@ -67,10 +85,21 @@ export function setupSocketHandlers(io: Server, sessionManager: BoardSessionMana
       socket.to(boardId).emit('sync:update', { update: upd });
     });
 
-    // ----- Cursor movement (volatile) -----------------------------------
+    // ----- Cursor movement (volatile, never enters persisted document) -----
     socket.on('cursor:move', (data: { boardId: string; x: number; y: number; viewport?: any; selectedIds?: string[] }) => {
       if (!currentBoardId || !currentUser) return;
-      // Relay to other clients via volatile channel (no ack, best‑effort)
+
+      // Validate numeric coordinates
+      if (
+        typeof data.x !== 'number' ||
+        typeof data.y !== 'number' ||
+        !Number.isFinite(data.x) ||
+        !Number.isFinite(data.y)
+      ) {
+        return;
+      }
+
+      // Relay to other clients via volatile channel (no ack, best-effort at 30-60 fps)
       socket.volatile.to(data.boardId).emit('cursor:move', {
         userId: currentUser.userId,
         userName: currentUser.userName,
@@ -83,10 +112,14 @@ export function setupSocketHandlers(io: Server, sessionManager: BoardSessionMana
       });
     });
 
-    // ----- Awareness updates --------------------------------------------
+    // ----- Awareness updates (ephemeral peer presence & selection vectors) ---
     socket.on('awareness:update', (payload: { boardId: string; update: ArrayBuffer | Uint8Array }) => {
       if (!currentBoardId) return;
       const binary = payload.update instanceof Uint8Array ? payload.update : new Uint8Array(payload.update);
+
+      // Cap awareness vector payload to 64 KB
+      if (binary.byteLength > 64 * 1024) return;
+
       // Broadcast raw binary to peers in the same board
       socket.to(payload.boardId).emit('awareness:update', { update: Buffer.from(binary) });
     });
@@ -99,7 +132,7 @@ export function setupSocketHandlers(io: Server, sessionManager: BoardSessionMana
           socket.to(currentBoardId).emit('presence:leave', { userId: currentUser.userId });
           await redisService.removePresence(currentBoardId, currentUser.userId);
         }
-        // Remove socket tracking from the session manager
+        // Remove socket tracking and rate limiting state from the session manager
         const leftBoard = sessionManager.cleanupSocket(socket.id);
         if (leftBoard) {
           socket.leave(leftBoard);

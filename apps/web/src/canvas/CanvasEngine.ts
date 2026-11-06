@@ -1,3 +1,4 @@
+// path: apps/web/src/canvas/CanvasEngine.ts
 import {
   BoardDocManager,
   SceneCache,
@@ -68,6 +69,19 @@ export class CanvasEngine {
   public userName: string = 'User';
 
   private remoteCursors: RemoteCursor[] = [];
+  private readonly interpolatedCursors = new Map<
+    string,
+    {
+      userId: string;
+      userName: string;
+      userColor: string;
+      currentX: number;
+      currentY: number;
+      targetX: number;
+      targetY: number;
+      lastUpdated: number;
+    }
+  >();
   private isRunning: boolean = false;
   private rafId: number = 0;
   private dpr: number = 1;
@@ -126,6 +140,48 @@ export class CanvasEngine {
 
   public setRemoteCursors(cursors: RemoteCursor[]): void {
     this.remoteCursors = cursors;
+    const activeIds = new Set<string>();
+    const now = Date.now();
+
+    for (const c of cursors) {
+      activeIds.add(c.userId);
+      const existing = this.interpolatedCursors.get(c.userId);
+      if (!existing) {
+        this.interpolatedCursors.set(c.userId, {
+          userId: c.userId,
+          userName: c.userName || 'Anonymous',
+          userColor: c.userColor || '#60A5FA',
+          currentX: c.x,
+          currentY: c.y,
+          targetX: c.x,
+          targetY: c.y,
+          lastUpdated: c.timestamp || now,
+        });
+      } else {
+        existing.targetX = c.x;
+        existing.targetY = c.y;
+        existing.userName = c.userName || existing.userName;
+        existing.userColor = c.userColor || existing.userColor;
+        existing.lastUpdated = c.timestamp || now;
+
+        // If cursor made a massive jump (> 800px) e.g. on viewport change, snap immediately
+        if (Math.hypot(existing.targetX - existing.currentX, existing.targetY - existing.currentY) > 800) {
+          existing.currentX = existing.targetX;
+          existing.currentY = existing.targetY;
+        }
+      }
+    }
+
+    // Prune cursors no longer present in incoming list
+    for (const id of this.interpolatedCursors.keys()) {
+      if (!activeIds.has(id)) {
+        this.interpolatedCursors.delete(id);
+      }
+    }
+  }
+
+  public removeRemoteCursor(userId: string): void {
+    this.interpolatedCursors.delete(userId);
   }
 
   public setViewport(newViewport: ViewportState): void {
@@ -211,10 +267,43 @@ export class CanvasEngine {
         }
       }
 
-      // 2. Interaction & Overlay Canvas: Render handles, marquee, cursors
+      // 2. Interaction & Overlay Canvas: Render handles, marquee, interpolated cursors
       const selectedObjects = this.selectedIds
         .map((id) => this.sceneCache.getObject(id))
         .filter((o): o is CanvasObject => o !== undefined);
+
+      // Perform smooth 60fps linear interpolation (lerp) toward target positions
+      const now = Date.now();
+      const LERP_FACTOR = 0.35;
+      const smoothCursors: RemoteCursor[] = [];
+
+      for (const [id, c] of this.interpolatedCursors.entries()) {
+        // Prune cursors idle for > 5000ms
+        if (now - c.lastUpdated > 5000) {
+          this.interpolatedCursors.delete(id);
+          continue;
+        }
+
+        const dx = c.targetX - c.currentX;
+        const dy = c.targetY - c.currentY;
+
+        if (Math.abs(dx) < 0.25 && Math.abs(dy) < 0.25) {
+          c.currentX = c.targetX;
+          c.currentY = c.targetY;
+        } else {
+          c.currentX += dx * LERP_FACTOR;
+          c.currentY += dy * LERP_FACTOR;
+        }
+
+        smoothCursors.push({
+          userId: c.userId,
+          userName: c.userName,
+          userColor: c.userColor,
+          x: c.currentX,
+          y: c.currentY,
+          timestamp: c.lastUpdated,
+        });
+      }
 
       renderOverlay({
         ctx: this.overlayCtx,
@@ -224,7 +313,7 @@ export class CanvasEngine {
         selectedObjects,
         marquee: this.marqueeBox,
         previewObject: this.previewObject,
-        remoteCursors: this.remoteCursors,
+        remoteCursors: smoothCursors,
       });
 
       this.rafId = requestAnimationFrame(loop);
@@ -743,6 +832,7 @@ export class CanvasEngine {
   public destroy(): void {
     this.isRunning = false;
     cancelAnimationFrame(this.rafId);
+    this.interpolatedCursors.clear();
 
     const el = this.overlayCanvas;
     el.removeEventListener('pointerdown', this.onPointerDown);
