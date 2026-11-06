@@ -1,3 +1,4 @@
+// path: apps/web/src/App.tsx
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import {
@@ -9,8 +10,9 @@ import {
 } from '@sketchboard/shared';
 import { CanvasContainer } from './components/CanvasContainer';
 import { ExportModal } from './components/ExportModal';
+import { MpesaModal } from './components/MpesaModal';
 import { useCanvasStore } from './store/useCanvasStore';
-import { Users, Download } from 'lucide-react';
+import { Users, Download, Smartphone } from 'lucide-react';
 
 interface OutboxItem {
   clientSeq: number;
@@ -33,6 +35,7 @@ export const App: React.FC = () => {
   const [participantCount, setParticipantCount] = useState<number>(1);
   const [remoteCursors, setRemoteCursors] = useState<RemoteCursor[]>([]);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isMpesaOpen, setIsMpesaOpen] = useState(false);
   const { selectedIds, locale, setLocale, t } = useCanvasStore();
 
   // User identity
@@ -137,9 +140,10 @@ export const App: React.FC = () => {
       setRemoteCursors((prev) => prev.filter((c) => c.userId !== data.userId));
     });
 
-    // Track local document mutations to dispatch to socket
+    // Track local document mutations (including local undo/redo) to dispatch to socket
     const onDocUpdate = (update: Uint8Array, origin: any) => {
-      if (origin === 'local') {
+      const isLocal = origin === 'local' || origin === docManager.undoManager || (origin && origin.constructor && origin.constructor.name === 'UndoManager');
+      if (isLocal) {
         const seq = seqCounterRef.current++;
         outboxRef.current.set(seq, { clientSeq: seq, update });
         setSavingStatus('Saving…');
@@ -282,6 +286,31 @@ export const App: React.FC = () => {
             </button>
           </div>
 
+          {/* Lipa Na M-Pesa Upgrade Button */}
+          <button
+            onClick={() => setIsMpesaOpen(true)}
+            data-testid="mpesa-header-button"
+            title="Lipa Na M-Pesa (Safaricom STK Push)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(22, 163, 74, 0.3)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Smartphone size={14} />
+            <span>{t.header.mpesa}</span>
+          </button>
+
           {/* Export Button */}
           <button
             onClick={() => setIsExportOpen(true)}
@@ -370,6 +399,14 @@ export const App: React.FC = () => {
         sceneCache={sceneCache}
         selectedIds={selectedIds}
         boardName={boardId}
+      />
+
+      {/* Safaricom Lipa Na M-Pesa Checkout Modal */}
+      <MpesaModal
+        isOpen={isMpesaOpen}
+        onClose={() => setIsMpesaOpen(false)}
+        boardId={boardId}
+        userId={userId}
       />
     </div>
   );

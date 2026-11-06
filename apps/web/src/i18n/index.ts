@@ -1,3 +1,4 @@
+// path: apps/web/src/i18n/index.ts
 export type Locale = 'en' | 'sw';
 
 export interface Translations {
@@ -26,6 +27,7 @@ export interface Translations {
     participants: string;
     export: string;
     share: string;
+    mpesa: string;
   };
   exportModal: {
     title: string;
@@ -41,6 +43,36 @@ export interface Translations {
     cancel: string;
     download: string;
     preparing: string;
+  };
+  mpesaModal: {
+    title: string;
+    subtitle: string;
+    badge: string;
+    selectPlan: string;
+    phoneLabel: string;
+    phonePlaceholder: string;
+    phoneHelp: string;
+    payButton: string;
+    initiatingButton: string;
+    cbkLimitNote: string;
+    promptTitle: string;
+    promptInstruction: string;
+    waitingForPin: string;
+    simulateSuccess: string;
+    simulateCancel: string;
+    successTitle: string;
+    successSubtitle: string;
+    receiptLabel: string;
+    amountPaidLabel: string;
+    planLabel: string;
+    phoneSentLabel: string;
+    smsNotice: string;
+    doneButton: string;
+    failedTitle: string;
+    failedReasonLabel: string;
+    tryAgainButton: string;
+    closeButton: string;
+    invalidPhoneError: string;
   };
   help: {
     title: string;
@@ -102,6 +134,7 @@ export const translations: Record<Locale, Translations> = {
       participants: 'active squad members',
       export: 'Export',
       share: 'Share',
+      mpesa: 'Lipa Na M-Pesa',
     },
     exportModal: {
       title: 'Export Board',
@@ -117,6 +150,36 @@ export const translations: Record<Locale, Translations> = {
       cancel: 'Cancel',
       download: 'Download Export',
       preparing: 'Rendering canvas…',
+    },
+    mpesaModal: {
+      title: 'Upgrade Sketchboard Workspace',
+      subtitle: 'Instant mobile checkout via Safaricom Lipa Na M-Pesa for Kenyan squads & creators',
+      badge: 'LIPA NA M-PESA',
+      selectPlan: 'Select Workspace Plan',
+      phoneLabel: 'M-Pesa Mobile Number',
+      phonePlaceholder: '0712 345 678 or 0110 123 456',
+      phoneHelp: 'Enter your Safaricom or Airtel Money line registered for M-Pesa.',
+      payButton: 'Pay with Lipa Na M-Pesa',
+      initiatingButton: 'Initiating STK Push…',
+      cbkLimitNote: 'Central Bank of Kenya STK limit: KES 300,000 per transaction.',
+      promptTitle: 'Enter M-Pesa PIN on Handset',
+      promptInstruction: 'An STK Push prompt has been sent to your mobile phone. Please check your handset and enter your 4-digit M-Pesa PIN to complete payment.',
+      waitingForPin: 'Waiting for PIN authorization from Safaricom…',
+      simulateSuccess: 'Simulate PIN Authorization (Dev)',
+      simulateCancel: 'Simulate User Cancel (Dev)',
+      successTitle: 'Malipo Yamefaulu! Payment Successful',
+      successSubtitle: 'Your Sketchboard workspace plan has been upgraded and unlocked.',
+      receiptLabel: 'M-Pesa Receipt Number',
+      amountPaidLabel: 'Amount Paid',
+      planLabel: 'Plan Tier',
+      phoneSentLabel: 'Phone Number',
+      smsNotice: "SMS confirmation dispatched via Africa's Talking gateway.",
+      doneButton: 'Back to Canvas',
+      failedTitle: 'Payment Cancelled or Failed',
+      failedReasonLabel: 'Reason',
+      tryAgainButton: 'Try Again',
+      closeButton: 'Close',
+      invalidPhoneError: 'Please enter a valid Kenyan mobile number (07... or 01...)',
     },
     help: {
       title: 'Keyboard Shortcuts',
@@ -176,6 +239,7 @@ export const translations: Record<Locale, Translations> = {
       participants: 'wanachama waliopo ubaoni',
       export: 'Hamisha',
       share: 'Gawa Kiungo',
+      mpesa: 'Lipa Na M-Pesa',
     },
     exportModal: {
       title: 'Hamisha Mchoro',
@@ -191,6 +255,36 @@ export const translations: Record<Locale, Translations> = {
       cancel: 'Ghairi',
       download: 'Pakua Mchoro',
       preparing: 'Inatayarisha mchoro…',
+    },
+    mpesaModal: {
+      title: 'Boresha Nafasi ya Sketchboard',
+      subtitle: 'Malipo ya haraka kupitia Safaricom Lipa Na M-Pesa kwa ajili ya timu za Kenya',
+      badge: 'LIPA NA M-PESA',
+      selectPlan: 'Chagua Kifurushi cha Ubao',
+      phoneLabel: 'Nambari ya Simu ya M-Pesa',
+      phonePlaceholder: '0712 345 678 au 0110 123 456',
+      phoneHelp: 'Weka nambari ya Safaricom au Airtel iliyosajiliwa na M-Pesa.',
+      payButton: 'Lipa Kupitia M-Pesa',
+      initiatingButton: 'Inatuma Ombi la STK…',
+      cbkLimitNote: 'Kikomo cha Benki Kuu ya Kenya (CBK): KES 300,000 kwa kila muamala.',
+      promptTitle: 'Weka Nambari ya Siri (PIN) Kwenye Simu',
+      promptInstruction: 'Ujumbe wa STK Push umetumwa kwenye simu yako. Tafadhali fungua simu yako na uweke PIN yako ya M-Pesa kukamilisha malipo.',
+      waitingForPin: 'Inasubiri uthibitisho wa PIN kutoka Safaricom…',
+      simulateSuccess: 'Iga Uthibitisho wa PIN (Majaribio)',
+      simulateCancel: 'Iga Kughairi kwa Mtumiaji (Majaribio)',
+      successTitle: 'Malipo Yamefaulu! Hongera',
+      successSubtitle: 'Kifurushi chako cha Sketchboard kimewashwa mara moja.',
+      receiptLabel: 'Nambari ya Risiti ya M-Pesa',
+      amountPaidLabel: 'Kiasi Kilicholipwa',
+      planLabel: 'Aina ya Kifurushi',
+      phoneSentLabel: 'Nambari ya Simu',
+      smsNotice: "Ujumbe wa uthibitisho (SMS) umetumwa kupitia Africa's Talking.",
+      doneButton: 'Rudi Ubaoni',
+      failedTitle: 'Malipo Yameshindwa au Kughairiwa',
+      failedReasonLabel: 'Sababu',
+      tryAgainButton: 'Jaribu Tena',
+      closeButton: 'Funga',
+      invalidPhoneError: 'Tafadhali weka nambari sahihi ya simu ya Kenya (07... au 01...)',
     },
     help: {
       title: 'Njia za Mkato za Kibodi',
