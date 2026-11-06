@@ -93,10 +93,10 @@ jobs:
         run: pnpm test:load
 
       - name: Build Docker Server Image
-        run: docker build -f Dockerfile.server -t ghcr.io/${{ github.repository }}/server:latest .
+        run: docker build -f Dockerfile.server -t ghcr.io/crnjihia/sketchboard-server:latest .
 
       - name: Build Docker Web Image
-        run: docker build -f Dockerfile.web -t ghcr.io/${{ github.repository }}/web:latest .
+        run: docker build -f Dockerfile.web -t ghcr.io/crnjihia/sketchboard-web:latest .
 
       - name: Log in to GitHub Container Registry (GHCR)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -109,8 +109,8 @@ jobs:
       - name: Push Container Images to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          docker push ghcr.io/${{ github.repository }}/server:latest
-          docker push ghcr.io/${{ github.repository }}/web:latest
+          docker push ghcr.io/crnjihia/sketchboard-server:latest
+          docker push ghcr.io/crnjihia/sketchboard-web:latest
 
   k8s-smoke-test:
     runs-on: ubuntu-latest
@@ -129,17 +129,19 @@ jobs:
 
       - name: Build local container images
         run: |
-          docker build -f Dockerfile.server -t ghcr.io/sketchboard/server:latest .
-          docker build -f Dockerfile.web -t ghcr.io/sketchboard/web:latest .
+          docker build -f Dockerfile.server -t ghcr.io/crnjihia/sketchboard-server:latest .
+          docker build -f Dockerfile.web -t ghcr.io/crnjihia/sketchboard-web:latest .
 
       - name: Load images into Kind nodes
         run: |
-          kind load docker-image ghcr.io/sketchboard/server:latest --name sketchboard-ci
-          kind load docker-image ghcr.io/sketchboard/web:latest --name sketchboard-ci
+          kind load docker-image ghcr.io/crnjihia/sketchboard-server:latest --name sketchboard-ci
+          kind load docker-image ghcr.io/crnjihia/sketchboard-web:latest --name sketchboard-ci
 
       - name: Deploy Sketchboard via Kustomize
         run: |
           kubectl apply -k deploy/k8s
+          kubectl rollout status statefulset/redis -n sketchboard --timeout=120s
+          kubectl rollout status statefulset/postgres -n sketchboard --timeout=120s
           kubectl rollout status deployment/sketchboard-server -n sketchboard --timeout=180s
           kubectl rollout status deployment/sketchboard-web -n sketchboard --timeout=180s
 
