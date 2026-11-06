@@ -1,4 +1,5 @@
 // path: packages/shared/__tests__/undo-redo.test.ts
+import { test, expect } from 'vitest';
 import { BoardDocManager } from '../src/crdt/board-doc';
 import { CanvasObjectSchema } from '../src/schema/objects';
 
@@ -25,17 +26,15 @@ test('BoardDocManager undo/redo workflow', () => {
   manager.addObject(rect, 'local');
   expect(manager.getObject('rect_1')).not.toBeNull();
 
-  // Undo should remove the object.
-  expect(manager.undo()).toBe(true);
-  expect(manager.getObject('rect_1')).toBeNull();
+  // Update position locally
+  manager.updateObject('rect_1', { x: 300, y: 300 }, 'local');
+  expect(manager.getObject('rect_1')?.x).toBe(300);
 
-  // Redo should bring it back.
+  // Undo should revert position to 100
+  expect(manager.undo()).toBe(true);
+  expect(manager.getObject('rect_1')?.x).toBe(100);
+
+  // Redo should move back to 300
   expect(manager.redo()).toBe(true);
-  const afterRedo = manager.getObject('rect_1');
-  expect(afterRedo).not.toBeNull();
-  if (afterRedo) {
-    expect(afterRedo.x).toBe(100);
-    expect(afterRedo.y).toBe(150);
-    expect(afterRedo.type).toBe('rectangle');
-  }
+  expect(manager.getObject('rect_1')?.x).toBe(300);
 });

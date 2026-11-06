@@ -34,6 +34,7 @@ export class BoardDocManager {
     if (trackedOrigins) {
       this._undoManager = new Y.UndoManager([this.objectsMap, this.zOrderArray], {
         trackedOrigins,
+        captureTimeout: 0,
       });
     }
   }
@@ -42,9 +43,14 @@ export class BoardDocManager {
     if (!this._undoManager) {
       this._undoManager = new Y.UndoManager([this.objectsMap, this.zOrderArray], {
         trackedOrigins: this.trackedOrigins ?? new Set(['local']),
+        captureTimeout: 0,
       });
     }
     return this._undoManager;
+  }
+
+  public stopCapturing(): void {
+    this.undoManager.stopCapturing();
   }
 
   /**
