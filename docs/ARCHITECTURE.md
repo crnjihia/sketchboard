@@ -152,3 +152,74 @@ sequenceDiagram
 | `doc:ack` | Server &rarr; Client | `{ clientSeq, serverSeq }` | Acknowledges receipt of client sequence |
 | `cursor:move`| Client &rarr; Server | `{ boardId, userId, x, y }` | World-coordinate ephemeral cursor position |
 | `cursor:remote`| Server &rarr; Client | `{ userId, userName, userColor, x, y }` | Volatile broadcast to other squad members |
+
+---
+
+## 6. Kenyan FinTech & Mobile Notification Subsystem
+
+To address real-world workflows in Nairobi's technology ecosystem, Sketchboard incorporates native mobile money billing (**Safaricom Lipa Na M-Pesa**) and cellular SMS alerts (**Africa's Talking**). Both subsystems operate with zero-credential in-memory mock adapters by default, switching transparently to production gateways in live environments.
+
+### Safaricom Lipa Na M-Pesa STK Push Lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User (Browser)
+    participant Web as React Web App
+    participant Server as Sketchboard Server
+    participant Ledger as Payment Ledger (PG/Memory)
+    participant Daraja as Safaricom Daraja / Mock Adapter
+    actor Phone as User Mobile Handset
+
+    User->>Web: Select Plan & Enter Phone (0712345678)
+    Web->>Server: POST /api/payments/mpesa/stkpush { boardId, phone, planId: "pro" }
+    Server->>Server: Validate MSISDN & CBK limit (KES 150)
+    Server->>Daraja: initiateStkPush({ phone: 254712345678, amount: 150 })
+    Daraja->>Phone: Prompt SIM Menu (Enter M-Pesa PIN)
+    Daraja-->>Server: Return { CheckoutRequestID: "ws_CO_..." }
+    Server->>Ledger: recordCheckout({ checkoutRequestId, boardId, planId, amount, status: 'PENDING' })
+    Server-->>Web: Return { checkoutRequestId, customerMessage }
+
+    loop Poll Status Every 2.5s (or await webhook)
+        Web->>Server: GET /api/payments/mpesa/status/ws_CO_...
+        Server-->>Web: Status { status: 'PENDING' }
+    end
+
+    User->>Phone: Enter M-Pesa PIN & Submit
+    Phone->>Daraja: Authorize transaction
+    Daraja->>Server: POST /api/payments/mpesa/callback (Webhook payload)
+    Server->>Server: parseMpesaCallback(payload) -> NLX4891234, ResultCode: 0
+    Server->>Ledger: completePayment(checkoutRequestId, receiptNumber)
+    Server->>Ledger: upgradeBoardPlan(boardId, planId: "pro")
+    
+    Web->>Server: GET /api/payments/mpesa/status/ws_CO_...
+    Server-->>Web: Status { status: 'COMPLETED', receiptNumber: "NLX4891234" }
+    Web-->>User: Display Bilingual Success Modal & Active Plan Badge
+```
+
+### Africa's Talking SMS Collaborator Invites
+
+Collaborator invitations and billing receipts can be dispatched directly to Kenyan mobile devices in E.164 format:
+
+```mermaid
+graph LR
+    SquadLead["Squad Lead\n(Nairobi HQ)"] -->|Invite Collaborator| WebUI["Web UI Modal\n(Phone: 0722000000)"]
+    WebUI -->|POST /api/notifications/sms/invite| ServerAPI["Express Server API\n(Normalizes to +254722000000)"]
+    ServerAPI -->|Format SMS Message| ATClient["Africa's Talking Adapter\n(Mock or Production Gateway)"]
+    ATClient -->|Cellular Network Dispatch| Telco["Safaricom / Airtel Base Station"]
+    Telco -->|SMS Delivery| Collaborator["Collaborator Handset\n(Direct Link to Board)"]
+```
+
+### Payment & Notification REST API Routes
+
+| Endpoint | Method | Payload / Params | Response | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `/api/payments/mpesa/stkpush` | `POST` | `{ boardId, phone, planId, callbackUrl? }` | `{ success: true, checkoutRequestId }` | Initiates Lipa Na M-Pesa STK Push |
+| `/api/payments/mpesa/status/:id` | `GET` | `:id` (CheckoutRequestID) | `{ status, receiptNumber?, failureReason? }` | Polls transaction completion status |
+| `/api/payments/mpesa/callback` | `POST` | Safaricom `stkCallback` JSON | `{ ResultCode: 0, ResultDesc: "Accepted" }` | Webhook receiver for transaction confirmation |
+| `/api/payments/mpesa/mock-simulate` | `POST` | `{ checkoutRequestId, action: "success" \| "cancel" }` | `{ success: true, status }` | Dev-only handset simulation trigger |
+| `/api/payments/mpesa/plan/:boardId` | `GET` | `:boardId` | `{ boardId, planId, maxShapes, active }` | Retrieves active workspace plan limits |
+| `/api/notifications/sms/send` | `POST` | `{ to, message }` | `{ success: true, recipients: [...] }` | Sends arbitrary SMS via Africa's Talking |
+| `/api/notifications/sms/invite` | `POST` | `{ boardId, phone, inviterName }` | `{ success: true, messageId }` | Sends board join invite link to phone |
+| `/api/notifications/sms/outbox` | `GET` | _None_ | `Array<{ id, to, message, timestamp }>` | Inspects synthetic outbox in mock mode |
+
