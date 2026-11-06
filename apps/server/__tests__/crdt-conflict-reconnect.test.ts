@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { io as ClientSocket, Socket as ClientSocketType } from 'socket.io-client';
 import { AddressInfo } from 'net';
 import { createSketchboardServer } from '../src/index';
+import { redisService } from '../src/sync/redis-adapter';
 import { BoardDocManager, StickyObject } from '@sketchboard/shared';
 
 describe('Real-Time CRDT Conflict Resolution & Offline Reconnect', () => {
@@ -231,6 +232,8 @@ describe('Real-Time CRDT Conflict Resolution & Offline Reconnect', () => {
     expect(doc1.getSnapshot()).toEqual(serverSession.getSnapshot());
 
     // 6. Test snapshot compaction
+    // Ensure any background compaction lock from previous client disconnect has settled
+    await redisService.releaseCompactionLock(boardId);
     const compacted = await serverInstance.sessionManager.compactBoard(boardId);
     expect(compacted).toBe(true);
 

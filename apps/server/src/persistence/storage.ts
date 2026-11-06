@@ -15,6 +15,7 @@ export class PostgresStorageEngine implements IStorageEngine {
   private pool: pg.Pool | null = null;
   private inMemoryFallback = new Map<string, Uint8Array>();
   private useFallback = false;
+  private isInitialized = false;
 
   constructor() {
     if (config.enablePostgres) {
@@ -28,7 +29,7 @@ export class PostgresStorageEngine implements IStorageEngine {
   }
 
   public async init(): Promise<void> {
-    if (this.useFallback || !this.pool) return;
+    if (this.isInitialized || this.useFallback || !this.pool) return;
 
     try {
       const client = await this.pool.connect();
@@ -43,6 +44,7 @@ export class PostgresStorageEngine implements IStorageEngine {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
         `);
+        this.isInitialized = true;
       } finally {
         client.release();
       }
@@ -53,6 +55,10 @@ export class PostgresStorageEngine implements IStorageEngine {
   }
 
   public async loadSnapshot(boardId: string): Promise<Uint8Array | null> {
+    if (!this.isInitialized && !this.useFallback && this.pool) {
+      await this.init();
+    }
+
     if (this.useFallback || !this.pool) {
       return this.inMemoryFallback.get(boardId) ?? null;
     }
@@ -79,6 +85,10 @@ export class PostgresStorageEngine implements IStorageEngine {
   ): Promise<void> {
     // Keep in-memory cache updated
     this.inMemoryFallback.set(boardId, snapshot);
+
+    if (!this.isInitialized && !this.useFallback && this.pool) {
+      await this.init();
+    }
 
     if (this.useFallback || !this.pool) return;
 
