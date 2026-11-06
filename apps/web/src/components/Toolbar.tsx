@@ -52,11 +52,12 @@ export const Toolbar: React.FC = () => {
     { id: 'sticky', label: t.toolbar.sticky, shortcut: 'N', icon: <StickyNote size={18} /> },
   ];
 
-  const currentColorEntry = SWAHILI_COLOR_MAP[activeColor as SwahiliColorName] ?? {
-    hex: activeColor,
-    label: activeColor,
-    borderHex: '#3b82f6',
-  };
+  const currentColorEntry =
+    SWAHILI_COLOR_MAP[activeColor as SwahiliColorName] ?? {
+      hex: activeColor,
+      label: activeColor,
+      borderHex: '#3b82f6',
+    };
 
   const handleZoom = (delta: number) => {
     setViewport((prev) => ({

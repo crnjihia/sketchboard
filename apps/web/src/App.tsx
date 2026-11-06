@@ -217,9 +217,7 @@ export const App: React.FC = () => {
             S
           </div>
           <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: -0.3 }}>Sketchboard</span>
-          <span style={{ fontSize: 12, color: '#94a3b8', background: '#1e293b', padding: '3px 8px', borderRadius: 6, border: '1px solid #334155' }}>
-            /b/{boardId}
-          </span>
+          <span style={{ fontSize: 12, color: '#94a3b8', background: '#1e293b', padding: '3px 8px', borderRadius: 6, border: '1px solid #334155' }}>/b/{boardId}</span>
         </div>
 
         {/* Sync Status, Node Info & Participants */}

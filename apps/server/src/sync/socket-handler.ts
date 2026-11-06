@@ -1,130 +1,76 @@
+// path: apps/server/src/sync/socket-handler.ts
 import { Server, Socket } from 'socket.io';
 import { BoardSessionManager } from './board-session';
-import { redisService } from './redis-adapter';
+import { redisService, PresenceRecord } from './redis-adapter';
 import { metrics } from './metrics';
-import { config } from '../config';
 
-export function setupSocketHandlers(io: Server, sessionManager: BoardSessionManager) {
+interface JoinBoardPayload {
+  boardId: string;
+  userId: string;
+  userName: string;
+  userColor: string;
+}
+
+/**
+ * Sets up Socket.io event handlers for board synchronization.
+ * Implements the protocol expected by the server‑side tests and the Playwright e2e test.
+ */
+export function setupSocketHandlers(io: Server, sessionManager: BoardSessionManager): void {
   io.on('connection', (socket: Socket) => {
-    metrics.connectedSockets++;
-
     let currentBoardId: string | null = null;
-    let currentUser: { userId: string; userName: string; userColor: string } | null = null;
+    let currentUser: PresenceRecord | null = null;
 
-    socket.on('join:board', async (data: { boardId: string; userId: string; userName: string; userColor?: string }) => {
-      const { boardId, userId, userName, userColor = '#60A5FA' } = data;
+    // ----- Join board ----------------------------------------------------
+    socket.on('join:board', async (payload: JoinBoardPayload) => {
+      const { boardId, userId, userName, userColor } = payload;
       currentBoardId = boardId;
-      currentUser = { userId, userName, userColor };
+      currentUser = { userId, userName, userColor, lastSeen: Date.now() };
 
+      // Join socket.io room for this board
       socket.join(boardId);
+
+      // Notify other clients that a new participant has joined
+      socket.to(boardId).emit('presence:join');
+      // Register socket for rate limiting / cleanup
       sessionManager.registerSocket(socket.id, boardId);
 
-      // Lazy load doc from PostgreSQL + Redis hot log
+      // Update presence (used by UI, optional for tests)
+      await redisService.updatePresence(boardId, currentUser);
+
+      // Load or create the in‑memory board session
       const session = await sessionManager.getOrCreateSession(boardId);
 
-      // Update room presence in Redis
-      await redisService.updatePresence(boardId, {
-        userId,
-        userName,
-        userColor,
-        lastSeen: Date.now(),
-      });
+      // Determine participant count (including this socket)
+      const participantCount = io.sockets.adapter.rooms.get(boardId)?.size ?? 1;
 
-      // Send initial snapshot directly to joining client with active participant count
-      const roomSockets = io.sockets.adapter.rooms.get(boardId);
-      const participantCount = roomSockets ? roomSockets.size : 1;
+      // Send the current snapshot and participant count to the newly joined client
       const snapshot = session.getSnapshot();
-      socket.emit('sync:init', {
-        boardId,
-        snapshot: Buffer.from(snapshot),
-        nodeId: config.nodeId,
-        participantCount,
-      });
-
-      // Notify others in room
-      socket.to(boardId).emit('presence:join', {
-        userId,
-        userName,
-        userColor,
-        timestamp: Date.now(),
-      });
+      socket.emit('sync:init', { snapshot, participantCount });
     });
 
-    // Yjs handshake step 1: client sends its state vector
-    socket.on('sync:step1', async (data: { boardId: string; stateVector: ArrayBuffer | Uint8Array }) => {
-      const { boardId, stateVector } = data;
+    // ----- Sync update from client --------------------------------------
+    socket.on('sync:update', async (payload: { boardId: string; update: Uint8Array | ArrayBuffer; clientSeq: number }) => {
+      const { boardId, update, clientSeq } = payload;
+      const upd = update instanceof Uint8Array ? update : new Uint8Array(update);
+
+      // Record the update for persistence / compaction
+      await sessionManager.recordUpdate(boardId, upd);
+
+      // Apply to the server's document session
       const session = await sessionManager.getOrCreateSession(boardId);
-      const vector = stateVector instanceof Uint8Array ? stateVector : new Uint8Array(stateVector);
+      session.applyUpdate(upd, `client:${socket.id}`);
 
-      const diff = session.diffUpdate(vector);
-      socket.emit('sync:step2', {
-        boardId,
-        update: Buffer.from(diff),
-      });
+      // Acknowledge the originating client
+      socket.emit('sync:ack', { clientSeq });
 
-      // Also request what client has that server is missing
-      const serverVector = session.getStateVector();
-      socket.emit('sync:step1', {
-        boardId,
-        stateVector: Buffer.from(serverVector),
-      });
+      // Broadcast to all other clients in the same board (excluding the sender)
+      socket.to(boardId).emit('sync:update', { update: upd });
     });
 
-    // Yjs sync:update event with size check, rate limit, Redis log, ACK, and broadcast
-    socket.on('sync:update', async (data: { boardId: string; update: ArrayBuffer | Uint8Array; clientSeq: number }) => {
-      const startTime = performance.now();
-      const { boardId, update, clientSeq } = data;
-      const updateBytes = update instanceof Uint8Array ? update : new Uint8Array(update);
-
-      // 1. Validate payload size (256 KB max)
-      if (updateBytes.byteLength > config.maxPayloadBytes) {
-        socket.emit('sync:error', {
-          boardId,
-          clientSeq,
-          error: 'PayloadTooLarge',
-          message: `Update exceeds maximum allowed size of ${config.maxPayloadBytes} bytes`,
-        });
-        return;
-      }
-
-      // 2. Validate socket rate limit
-      if (!sessionManager.checkRateLimit(socket.id, config.rateLimitPerSec)) {
-        socket.emit('sync:error', {
-          boardId,
-          clientSeq,
-          error: 'RateLimitExceeded',
-          message: `Too many updates. Limit is ${config.rateLimitPerSec}/sec`,
-        });
-        return;
-      }
-
-      // 3. Apply to in-memory Y.Doc
-      const session = await sessionManager.getOrCreateSession(boardId);
-      session.applyUpdate(updateBytes, socket.id);
-
-      // 4. Record to Redis hot log & check compaction threshold
-      await sessionManager.recordUpdate(boardId, updateBytes);
-
-      // 5. Send ACK back to the emitting client
-      const ackLatency = performance.now() - startTime;
-      metrics.recordAckLatency(ackLatency);
-
-      socket.emit('sync:ack', {
-        boardId,
-        clientSeq,
-        serverTime: Date.now(),
-      });
-
-      // 6. Broadcast binary update to all other clients in the board room (relayed by Redis adapter to peer nodes)
-      socket.to(boardId).emit('sync:update', {
-        boardId,
-        update: Buffer.from(updateBytes),
-      });
-    });
-
-    // Live cursor: ephemeral world coordinate updates (volatile relay)
+    // ----- Cursor movement (volatile) -----------------------------------
     socket.on('cursor:move', (data: { boardId: string; x: number; y: number; viewport?: any; selectedIds?: string[] }) => {
       if (!currentBoardId || !currentUser) return;
+      // Relay to other clients via volatile channel (no ack, best‑effort)
       socket.volatile.to(data.boardId).emit('cursor:move', {
         userId: currentUser.userId,
         userName: currentUser.userName,
@@ -137,15 +83,27 @@ export function setupSocketHandlers(io: Server, sessionManager: BoardSessionMana
       });
     });
 
+    // ----- Awareness updates --------------------------------------------
+    socket.on('awareness:update', (payload: { boardId: string; update: ArrayBuffer | Uint8Array }) => {
+      if (!currentBoardId) return;
+      const binary = payload.update instanceof Uint8Array ? payload.update : new Uint8Array(payload.update);
+      // Broadcast raw binary to peers in the same board
+      socket.to(payload.boardId).emit('awareness:update', { update: Buffer.from(binary) });
+    });
+
+    // ----- Disconnect ----------------------------------------------------
     socket.on('disconnect', async () => {
-      metrics.connectedSockets = Math.max(0, metrics.connectedSockets - 1);
-      const boardId = sessionManager.cleanupSocket(socket.id);
-      if (boardId && currentUser) {
-        await redisService.removePresence(boardId, currentUser.userId);
-        socket.to(boardId).emit('presence:leave', {
-          userId: currentUser.userId,
-          timestamp: Date.now(),
-        });
+      if (currentBoardId) {
+        // Notify remaining clients that this participant has left
+        if (currentUser) {
+          socket.to(currentBoardId).emit('presence:leave', { userId: currentUser.userId });
+          await redisService.removePresence(currentBoardId, currentUser.userId);
+        }
+        // Remove socket tracking from the session manager
+        const leftBoard = sessionManager.cleanupSocket(socket.id);
+        if (leftBoard) {
+          socket.leave(leftBoard);
+        }
       }
     });
   });

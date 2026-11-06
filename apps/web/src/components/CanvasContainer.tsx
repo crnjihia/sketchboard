@@ -103,7 +103,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   // Global Keyboard Shortcuts
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Ignore if typing inside textarea or input
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
@@ -129,7 +128,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
         case 'a':
           if (cmdOrCtrl) {
             e.preventDefault();
-            // Select all shapes
             const all = sceneCache.getSortedObjects().map((o) => o.id);
             setSelectedIds(all);
           } else {
@@ -180,7 +178,6 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
         case 'd':
           if (cmdOrCtrl && selectedIds.length > 0) {
             e.preventDefault();
-            // Duplicate selected shapes with offset
             const duplicatedIds: string[] = [];
             for (const id of selectedIds) {
               const original = sceneCache.getObject(id);

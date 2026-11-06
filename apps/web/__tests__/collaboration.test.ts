@@ -1,0 +1,1 @@
+// This file intentionally left blank after migration to e2e folder
